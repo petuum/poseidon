@@ -362,7 +362,9 @@ everything: all py$(PROJECT) mat$(PROJECT) test warn lint runtest
 third_party:
 	$(MAKE) -C third_party
 
-ps: third_party
+ps: $(PETUUM_PS_LIB)
+
+$(PETUUM_PS_LIB): ps third_party
 	$(MAKE) -C ps
 
 linecount:
