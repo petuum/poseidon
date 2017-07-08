@@ -1,0 +1,5 @@
+*.o
+build
+Makefile.config
+ps/lib
+.build_release

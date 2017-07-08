@@ -164,7 +164,7 @@ ifneq ("$(wildcard $(CUDA_DIR)/lib64)","")
 endif
 CUDA_LIB_DIR += $(CUDA_DIR)/lib
 
-INCLUDE_DIRS += $(BUILD_INCLUDE_DIR) ./src ./include 
+INCLUDE_DIRS += $(BUILD_INCLUDE_DIR) ./src ./include
 ifneq ($(CPU_ONLY), 1)
 	INCLUDE_DIRS += $(CUDA_INCLUDE_DIR)
 	LIBRARY_DIRS += $(CUDA_LIB_DIR)
@@ -321,7 +321,7 @@ COMMON_FLAGS += $(PETUUM_INCFLAGS)
 
 CXXFLAGS += -pthread -fPIC $(COMMON_FLAGS) $(WARNINGS)
 #Petuum
-CXXFLAGS += $(PETUUM_CXXFLAGS) 
+CXXFLAGS += $(PETUUM_CXXFLAGS)
 
 NVCCFLAGS += -ccbin=$(CXX) -Xcompiler -fPIC $(COMMON_FLAGS) -std=c++11
 # mex may invoke an older gcc that is too liberal with -Wuninitalized
@@ -353,11 +353,19 @@ SUPERCLEAN_EXTS := .so .a .o .bin .testbin .pb.cc .pb.h _pb2.py .cuo
 ##############################
 .PHONY: all test clean docs linecount lint lintclean tools examples $(DIST_ALIASES) \
 	proto runtest \
-	superclean supercleanlist supercleanfiles warn
+	superclean supercleanlist supercleanfiles warn third_party ps
 
 all: $(NAME) $(STATIC_NAME) tools examples
 
 everything: all py$(PROJECT) mat$(PROJECT) test warn lint runtest
+
+third_party:
+	$(MAKE) -C third_party
+
+ps: $(PETUUM_PS_LIB)
+
+$(PETUUM_PS_LIB): ps third_party
+	$(MAKE) -C ps
 
 linecount:
 	cloc --read-lang-def=$(PROJECT).cloc \
@@ -461,12 +469,16 @@ $(ALL_BUILD_DIRS): | $(BUILD_DIR_LINK)
 	@ mkdir -p $@
 
 $(NAME): $(PROTO_OBJS) $(OBJS) | $(LIB_BUILD_DIR)
-	$(CXX) -shared -o $@ $(OBJS) $(LINKFLAGS) $(LDFLAGS) 
+	$(CXX) -shared -o $@ $(OBJS) $(LINKFLAGS) $(LDFLAGS)
 	@ echo
 
 $(STATIC_NAME): $(PROTO_OBJS) $(OBJS) | $(LIB_BUILD_DIR)
 	ar rcs $@ $(PROTO_OBJS) $(OBJS)
 	@ echo
+
+$(OBJS): third_party ps
+
+$(PROTO_OBJS): third_party ps
 
 $(TEST_BUILD_DIR)/%.o: src/$(PROJECT)/test/%.cpp $(HXX_SRCS) $(TEST_HXX_SRCS) \
 		| $(TEST_BUILD_DIR)
