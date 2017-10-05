@@ -6,7 +6,12 @@ include $(CONFIG_FILE)
 
 # Petuum
 CAFFE_DIR := $(shell readlink $(dir $(lastword $(MAKEFILE_LIST))) -f)
-PETUUM_ROOT = $(CAFFE_DIR)/ps
+ifeq ($(USE_PS_THIN), 1)
+    PETUUM_ROOT = $(CAFFE_DIR)/ps-thin
+	COMMON_FLAGS += -DUSE_PS_THIN
+else
+    PETUUM_ROOT = $(CAFFE_DIR)/ps
+endif
 include $(CAFFE_DIR)/defns-poseidon.mk
 
 BUILD_DIR_LINK := $(BUILD_DIR)
@@ -174,7 +179,6 @@ LIBRARIES += pthread \
 	glog gflags protobuf leveldb snappy \
 	lmdb \
 	boost_system \
-	hdf5_hl hdf5 \
 	opencv_core opencv_highgui opencv_imgproc
 PYTHON_LIBRARIES := boost_python python2.7
 WARNINGS := -Wall -Wno-sign-compare

@@ -11,24 +11,23 @@
 
 namespace caffe {
 
-template <typename Dtype>
-class FeatureExtractor {
- public:
+template <typename Dtype> class FeatureExtractor {
+public:
   explicit FeatureExtractor(
-      const map<string, vector<int> >* layer_blobs_global_idx_ptr,
-      const int thread_id) : 
-      layer_blobs_global_idx_ptr_(layer_blobs_global_idx_ptr), 
-      thread_id_(thread_id) { }
+      const map<string, vector<int>> *layer_blobs_global_idx_ptr,
+      const int thread_id)
+      : layer_blobs_global_idx_ptr_(layer_blobs_global_idx_ptr),
+        thread_id_(thread_id) {}
 
-  void ExtractFeatures(const NetParameter& net_param);
+  void ExtractFeatures(const NetParameter &net_param);
 
- protected:
-  const map<string, vector<int> >* layer_blobs_global_idx_ptr_; 
+protected:
+  const map<string, vector<int>> *layer_blobs_global_idx_ptr_;
   int thread_id_;
 
   DISABLE_COPY_AND_ASSIGN(FeatureExtractor);
 };
 
-}  // namespace caffe
+} // namespace caffe
 
-#endif  // FEATURE_EXTRACTOR_HPP_
+#endif // FEATURE_EXTRACTOR_HPP_

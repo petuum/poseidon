@@ -7,15 +7,14 @@ namespace petuum {
 
 class SSPAggrServerThread : public SSPPushServerThread {
 public:
-  SSPAggrServerThread(int32_t my_id, pthread_barrier_t *init_barrier):
-      SSPPushServerThread(my_id, init_barrier),
-      row_send_milli_sec_(0),
-      early_comm_on_(false),
-      num_early_comm_off_msgs_(0) {
-    ResetServerIdleMilli_ = &SSPAggrServerThread::ResetServerIdleMilliNoEarlyComm;
+  SSPAggrServerThread(int32_t my_id, pthread_barrier_t *init_barrier)
+      : SSPPushServerThread(my_id, init_barrier), row_send_milli_sec_(0),
+        early_comm_on_(false), num_early_comm_off_msgs_(0) {
+    ResetServerIdleMilli_ =
+        &SSPAggrServerThread::ResetServerIdleMilliNoEarlyComm;
   }
 
-  ~SSPAggrServerThread() { }
+  ~SSPAggrServerThread() {}
 
 protected:
   virtual void SetWaitMsg();
@@ -41,5 +40,4 @@ protected:
   bool early_comm_on_;
   size_t num_early_comm_off_msgs_;
 };
-
 }

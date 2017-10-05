@@ -33,8 +33,7 @@ public:
   Server();
   ~Server();
 
-  void Init(int32_t server_id,
-            const std::vector<int32_t> &bg_ids,
+  void Init(int32_t server_id, const std::vector<int32_t> &bg_ids,
             MsgTracker *msg_tracker);
 
   void CreateTable(int32_t table_id, TableInfo &table_info);
@@ -48,9 +47,8 @@ public:
 
   void GetFulfilledRowRequests(std::vector<ServerRowRequest> *requests);
 
-  void ApplyOpLogUpdateVersion(
-      const void *oplog, size_t oplog_size, int32_t bg_thread_id,
-      uint32_t version);
+  void ApplyOpLogUpdateVersion(const void *oplog, size_t oplog_size,
+                               int32_t bg_thread_id, uint32_t version);
 
   int32_t GetMinClock();
 
@@ -64,12 +62,12 @@ public:
   size_t CreateSendServerPushRowMsgs(PushMsgSendFunc PushMsgSender,
                                      bool clock_changed = true);
 
-  size_t CreateSendServerPushRowMsgsPartial(
-      PushMsgSendFunc PushMsgSend);
+  size_t CreateSendServerPushRowMsgsPartial(PushMsgSendFunc PushMsgSend);
 
   bool AccumedOpLogSinceLastPush();
 
-  void RowSent(int32_t table_id, int32_t row_id, ServerRow *row, size_t num_clients);
+  void RowSent(int32_t table_id, int32_t row_id, ServerRow *row,
+               size_t num_clients);
 
 private:
   VectorClock bg_clock_;
@@ -78,13 +76,13 @@ private:
 
   // mapping <clock, table id> to an array of read requests
   std::map<int32_t,
-    boost::unordered_map<int32_t,
-      std::vector<ServerRowRequest> > > clock_bg_row_requests_;
+           boost::unordered_map<int32_t, std::vector<ServerRowRequest>>>
+      clock_bg_row_requests_;
 
   // latest oplog version that I have received from a bg thread
   std::map<int32_t, uint32_t> bg_version_map_;
   // Assume a single row does not exceed this size!
-  static const size_t kPushRowMsgSizeInit = 4*k1_Mi;
+  static const size_t kPushRowMsgSizeInit = 4 * k1_Mi;
   size_t push_row_msg_data_size_;
 
   int32_t server_id_;
@@ -93,4 +91,4 @@ private:
   MsgTracker *msg_tracker_;
 };
 
-}  // namespace petuum
+} // namespace petuum

@@ -1,0 +1,45 @@
+{
+    "folders":
+    [
+        {
+            "name": "Bosen",
+            "path": ".",
+            "file_exclude_patterns": [
+                
+            ],
+            "folder_exclude_patterns": [
+                ".idea",
+                "third_party",
+                "app/NMF",
+                "app/demo",
+                "app/dml",
+                "app/dnn_speech",
+                "app/kmeans",
+                "app/lda",
+                "app/mlr",
+                "app/rand_forest",
+                "app/sparsecoding",
+                "cmake",
+                "docker"
+            ]
+        }
+    ],
+    "settings": {
+        //"theme": "Soda Light 3.sublime-theme",
+        "theme": "Monokai.sublime-theme",
+        //"color_scheme": "Packages/User/SublimeLinter/LAZY (SL).tmTheme",
+        "translate_tabs_to_spaces": true,
+        "tab_size" : 2,
+        "rulers": [120],
+        "word_wrap": true,
+        "wrap_width": 120,
+        "spell_check": true,
+        "font_size": 11,
+    },
+    "build_systems": [
+        {
+            "cmd": ["make", "pdf"]
+        }
+    ]
+    
+}

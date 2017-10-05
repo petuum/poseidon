@@ -40,11 +40,11 @@ public:
                   bool table_access) {
     int32_t init_thread_id;
 #ifdef PETUUM_SINGLE_NODE
-    abstract_table_group_ = new TableGroupSN(table_group_config, table_access,
-                                             &init_thread_id);
+    abstract_table_group_ =
+        new TableGroupSN(table_group_config, table_access, &init_thread_id);
 #else
-    abstract_table_group_ = new TableGroup(table_group_config, table_access,
-                                           &init_thread_id);
+    abstract_table_group_ =
+        new TableGroup(table_group_config, table_access, &init_thread_id);
 #endif
     return init_thread_id;
   }
@@ -52,28 +52,23 @@ public:
   // Init thread need to call ShutDown() after all other app threads have
   // deregistered. Any other call to TableGroup and Table API must return
   // before calling ShutDown().
-  static void ShutDown() {
-    delete abstract_table_group_;
-  }
+  static void ShutDown() { delete abstract_table_group_; }
 
   // Should be called before Init(). Not thread-safe. We strongly recommend to
   // call RegisterRow from init thread to avoid race condition.
-  template<typename ROW>
-  static void RegisterRow(int32_t row_type) {
-    ClassRegistry<AbstractRow>::GetRegistry().AddCreator(row_type,
-                                CreateObj<AbstractRow, ROW>);
+  template <typename ROW> static void RegisterRow(int32_t row_type) {
+    ClassRegistry<AbstractRow>::GetRegistry().AddCreator(
+        row_type, CreateObj<AbstractRow, ROW>);
   }
 
   static bool CreateTable(int32_t table_id,
-                          const ClientTableConfig& table_config) {
+                          const ClientTableConfig &table_config) {
     return abstract_table_group_->CreateTable(table_id, table_config);
   }
 
   // Must be called by Init thread after creating all tables and before any
   // other thread calls RegisterThread().
-  static void CreateTableDone() {
-    abstract_table_group_->CreateTableDone();
-  }
+  static void CreateTableDone() { abstract_table_group_->CreateTableDone(); }
 
   // Called by Init thread only before it access any table API.
   // Must be called after CreateTableDone().
@@ -85,10 +80,10 @@ public:
 
   // GetTableOrDie is thread-safe with respect to other calls to
   // GetTableOrDie() Getter, terminate if table is not found.
-  template<typename UPDATE>
+  template <typename UPDATE>
   static Table<UPDATE> GetTableOrDie(int32_t table_id) {
-    AbstractClientTable *abstract_table
-        = abstract_table_group_->GetTableOrDie(table_id);
+    AbstractClientTable *abstract_table =
+        abstract_table_group_->GetTableOrDie(table_id);
     return Table<UPDATE>(abstract_table);
   }
 
@@ -110,9 +105,7 @@ public:
   // Comment(wdai): We only use one vector clock per process, each clock for a
   // registered app thread. The vector clock is not associated with individual
   // tables.
-  static void Clock() {
-    return abstract_table_group_->Clock();
-  }
+  static void Clock() { return abstract_table_group_->Clock(); }
 
   // Called by application threads that access table API
   // (referred to as table threads).
@@ -121,9 +114,7 @@ public:
   // have reached the barrier;
   // 2) Table threads that move beyond the barrier are guaranteed to see
   // the updates that other table threads apply to the table.
-  static void GlobalBarrier() {
-    return abstract_table_group_->GlobalBarrier();
-  }
+  static void GlobalBarrier() { return abstract_table_group_->GlobalBarrier(); }
 
   static void TurnOnEarlyComm() {
     return abstract_table_group_->TurnOnEarlyComm();
@@ -137,4 +128,4 @@ private:
   static AbstractTableGroup *abstract_table_group_;
 };
 
-}   // namespace petuum
+} // namespace petuum

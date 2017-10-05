@@ -13,5 +13,4 @@ public:
 private:
   static ServerThreadGroup *server_thread_group_;
 };
-
 }

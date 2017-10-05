@@ -8,7 +8,7 @@ namespace petuum {
 
 class BgWorkers {
 public:
-  static void Start(std::map<int32_t, ClientTable* > *tables);
+  static void Start(std::map<int32_t, ClientTable *> *tables);
 
   static void ShutDown();
   static void AppThreadRegister();
@@ -16,7 +16,7 @@ public:
 
   // Assuming table does not yet exist
   static bool CreateTable(int32_t table_id,
-                          const ClientTableConfig& table_config);
+                          const ClientTableConfig &table_config);
   static void WaitCreateTable();
   static bool RequestRow(int32_t table_id, int32_t row_id, int32_t clock);
   // If forced is set to true, a row request is forced to send even if
@@ -24,7 +24,8 @@ public:
   static void RequestRowAsync(int32_t table_id, int32_t row_id, int32_t clock,
                               bool forced);
   static void GetAsyncRowRequestReply();
-  static void SignalHandleAppendOnlyBuffer(int32_t table_id, int32_t channel_idx);
+  static void SignalHandleAppendOnlyBuffer(int32_t table_id,
+                                           int32_t channel_idx);
   static void ClockAllTables();
   static void SendOpLogsAllTables();
 
@@ -37,5 +38,4 @@ public:
 private:
   static BgWorkerGroup *bg_worker_group_;
 };
-
 }

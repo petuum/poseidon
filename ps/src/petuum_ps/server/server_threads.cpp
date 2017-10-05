@@ -13,5 +13,4 @@ void ServerThreads::ShutDown() {
   server_thread_group_->ShutDown();
   delete server_thread_group_;
 }
-
 }

@@ -12,22 +12,20 @@ namespace petuum {
 // Fixed size sparse vector
 class SparseVector : boost::noncopyable {
 public:
-  SparseVector(size_t capacity, size_t value_size):
-      capacity_(capacity),
-      value_size_(value_size),
-      size_(0),
-      data_(new uint8_t[(value_size + sizeof(int32_t))*capacity]) { }
+  SparseVector(size_t capacity, size_t value_size)
+      : capacity_(capacity), value_size_(value_size), size_(0),
+        data_(new uint8_t[(value_size + sizeof(int32_t)) * capacity]) {}
 
-  ~SparseVector() { }
+  ~SparseVector() {}
 
   size_t get_capacity() const;
   size_t get_size() const;
 
-  uint8_t* GetValPtr(int32_t key);
-  const uint8_t* GetValPtrConst(int32_t key) const;
+  uint8_t *GetValPtr(int32_t key);
+  const uint8_t *GetValPtrConst(int32_t key) const;
 
-  uint8_t* GetByIdx(int32_t index, int32_t *key);
-  const uint8_t* GetByIdxConst(int32_t index, int32_t *key) const;
+  uint8_t *GetByIdx(int32_t index, int32_t *key);
+  const uint8_t *GetByIdxConst(int32_t index, int32_t *key) const;
 
   void Copy(const SparseVector &src);
 
@@ -35,7 +33,7 @@ public:
 
   void Compact(int32_t index);
 
-  uint8_t* get_data_ptr() { return data_.get(); }
+  uint8_t *get_data_ptr() { return data_.get(); }
 
 private:
   int32_t &GetKeyByIdx(int32_t index);
@@ -55,5 +53,4 @@ private:
   size_t size_;
   std::unique_ptr<uint8_t[]> data_;
 };
-
 }

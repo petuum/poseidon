@@ -7,12 +7,12 @@
 
 namespace petuum {
 
-class NanoTimer{
+class NanoTimer {
 
   // true if time continue, false if timer stop
   typedef int32_t (*TimerHandler)(void *, int32_t);
 
-  struct TimerThrInfo{
+  struct TimerThrInfo {
     int32_t interval_;
     TimerHandler callback_;
     void *handler_argu_;
@@ -31,7 +31,5 @@ private:
   pthread_t thr_;
   TimerThrInfo tinfo_;
   bool started_;
-
 };
-
 }

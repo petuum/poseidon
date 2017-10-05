@@ -1,6 +1,6 @@
 #include <petuum_ps_common/util/lock.hpp>
 #include <cassert>
-#include <boost/thread.hpp>   // pthread status code
+#include <boost/thread.hpp> // pthread status code
 #include <pthread.h>
 #include <glog/logging.h>
 
@@ -28,15 +28,15 @@ bool SharedMutex::try_lock() {
   int status = pthread_rwlock_trywrlock(&rw_lock_);
 
   switch (status) {
-    case 0:
-      return true;
+  case 0:
+    return true;
 
-    case EBUSY:
-      return false;
+  case EBUSY:
+    return false;
 
-    case EDEADLK:
-    default:
-      assert(false);
+  case EDEADLK:
+  default:
+    assert(false);
   }
 }
 
@@ -64,34 +64,30 @@ bool SharedMutex::try_lock_shared() {
   assert(false);
 }
 
-void SharedMutex::unlock_shared() {
-  unlock();
-}
+void SharedMutex::unlock_shared() { unlock(); }
 
 // ==================== RecursiveSharedMutex ===================
 
 RecursiveSharedMutex::RecursiveSharedMutex()
-  : write_lock_count_(0), writer_id(0) { }
+    : write_lock_count_(0), writer_id(0) {}
 
-RecursiveSharedMutex::~RecursiveSharedMutex() {
-  assert(writer_id == 0);
-}
+RecursiveSharedMutex::~RecursiveSharedMutex() { assert(writer_id == 0); }
 
 void RecursiveSharedMutex::lock() {
   int status = pthread_rwlock_wrlock(&rw_lock_);
 
   switch (status) {
-    case 0:
-      writer_id = pthread_self();
-      assert(write_lock_count_ == 0);
+  case 0:
+    writer_id = pthread_self();
+    assert(write_lock_count_ == 0);
 
-    case EDEADLK:
-      assert(writer_id == pthread_self());
-      ++write_lock_count_;
-      return;
+  case EDEADLK:
+    assert(writer_id == pthread_self());
+    ++write_lock_count_;
+    return;
 
-    default:
-      assert(false);
+  default:
+    assert(false);
   }
 }
 
@@ -99,31 +95,28 @@ bool RecursiveSharedMutex::try_lock() {
   int status = pthread_rwlock_trywrlock(&rw_lock_);
 
   switch (status) {
-    case 0:
-      assert(writer_id == 0);
-      assert(write_lock_count_ == 0);
-      writer_id = pthread_self();
+  case 0:
+    assert(writer_id == 0);
+    assert(write_lock_count_ == 0);
+    writer_id = pthread_self();
+    ++write_lock_count_;
+    return true;
+
+  case EDEADLK:
+    assert(writer_id == pthread_self());
+
+  case EBUSY:
+    if (writer_id == pthread_self()) {
+      assert(write_lock_count_ > 0);
       ++write_lock_count_;
       return true;
+    } else {
+      assert(writer_id != pthread_self());
+      return false;
+    }
 
-    case EDEADLK:
-      assert(writer_id == pthread_self());
-
-    case EBUSY:
-      if (writer_id == pthread_self())
-      {
-        assert(write_lock_count_ > 0);
-        ++write_lock_count_;
-        return true;
-      }
-      else
-      {
-        assert(writer_id != pthread_self());
-        return false;
-      }
-
-    default:
-      assert(false);
+  default:
+    assert(false);
   }
 }
 
@@ -160,4 +153,4 @@ void RecursiveSharedMutex::unlock_shared() {
   assert(status == 0);
 }
 
-}   // namespace petuum
+} // namespace petuum

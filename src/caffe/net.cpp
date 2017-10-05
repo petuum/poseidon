@@ -15,29 +15,35 @@
 #include "caffe/util/upgrade_proto.hpp"
 #include "caffe/context.hpp"
 
+#ifdef USE_PS_THIN
+#include <petuum_ps/include/petuum_ps.hpp>
+#include <petuum_ps/include/system_gflags_declare.hpp>
+#include <petuum_ps/include/init_table_group_config.hpp>
+#else
 #include <petuum_ps_common/include/petuum_ps.hpp>
 #include <petuum_ps_common/include/system_gflags_declare.hpp>
 #include <petuum_ps_common/include/init_table_group_config.hpp>
+#endif
 
 namespace caffe {
 
 template <typename Dtype>
-Net<Dtype>::Net(const NetParameter& param, const int thread_id, const int net_id)
+Net<Dtype>::Net(const NetParameter &param, const int thread_id,
+                const int net_id)
     : thread_id_(thread_id), net_id_(net_id) {
   Init(param);
 }
 
 template <typename Dtype>
-Net<Dtype>::Net(const string& param_file, const int thread_id, const int net_id)
+Net<Dtype>::Net(const string &param_file, const int thread_id, const int net_id)
     : thread_id_(thread_id), net_id_(net_id) {
   NetParameter param;
   ReadNetParamsFromTextFileOrDie(param_file, &param);
   Init(param);
 }
 
-template <typename Dtype>
-void Net<Dtype>::Init(const NetParameter& in_param) {
-  util::Context& context = util::Context::get_instance();
+template <typename Dtype> void Net<Dtype>::Init(const NetParameter &in_param) {
+  util::Context &context = util::Context::get_instance();
   client_id_ = context.get_int32("client_id");
   // Filter layers based on their include/exclude rules and
   // the current NetState.
@@ -59,7 +65,7 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
   memory_used_ = 0;
   // set the input blobs
   for (int input_id = 0; input_id < param.input_size(); ++input_id) {
-    const int layer_id = -1;  // inputs have fake layer ID -1
+    const int layer_id = -1; // inputs have fake layer ID -1
     AppendTop(param, layer_id, input_id, &available_blobs, &blob_name_to_idx);
   }
   if (client_id_ == 0 && thread_id_ == 0) {
@@ -72,8 +78,8 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
   top_id_vecs_.resize(param.layers_size());
   bottom_need_backward_.resize(param.layers_size());
   for (int layer_id = 0; layer_id < param.layers_size(); ++layer_id) {
-    const LayerParameter& layer_param = param.layers(layer_id);
-    layers_.push_back(shared_ptr<Layer<Dtype> >(GetLayer<Dtype>(layer_param)));
+    const LayerParameter &layer_param = param.layers(layer_id);
+    layers_.push_back(shared_ptr<Layer<Dtype>>(GetLayer<Dtype>(layer_param)));
     layer_names_.push_back(layer_param.name());
     if (client_id_ == 0 && thread_id_ == 0) {
       LOG(INFO) << "Creating Layer " << layer_param.name();
@@ -94,7 +100,7 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
     // If the layer specifies that AutoTopBlobs() -> true and the LayerParameter
     // specified fewer than the required number (as specified by
     // ExactNumTopBlobs() or MinTopBlobs()), allocate them here.
-    Layer<Dtype>* layer = layers_[layer_id].get();
+    Layer<Dtype> *layer = layers_[layer_id].get();
     if (layer->AutoTopBlobs()) {
       const int needed_num_top =
           std::max(layer->MinTopBlobs(), layer->ExactNumTopBlobs());
@@ -109,8 +115,8 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
     if (client_id_ == 0 && thread_id_ == 0) {
       LOG(INFO) << "Setting up " << layer_names_[layer_id];
     }
-    layers_[layer_id]->SetUp(bottom_vecs_[layer_id], &top_vecs_[layer_id], 
-        net_id_, thread_id_);
+    layers_[layer_id]->SetUp(bottom_vecs_[layer_id], &top_vecs_[layer_id],
+                             net_id_, thread_id_);
     for (int top_id = 0; top_id < top_vecs_[layer_id].size(); ++top_id) {
       if (blob_loss_weights_.size() <= top_id_vecs_[layer_id][top_id]) {
         blob_loss_weights_.resize(top_id_vecs_[layer_id][top_id] + 1, Dtype(0));
@@ -118,10 +124,10 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
       blob_loss_weights_[top_id_vecs_[layer_id][top_id]] = layer->loss(top_id);
       if (client_id_ == 0 && thread_id_ == 0) {
         LOG(INFO) << "Top shape: " << top_vecs_[layer_id][top_id]->num() << " "
-            << top_vecs_[layer_id][top_id]->channels() << " "
-            << top_vecs_[layer_id][top_id]->height() << " "
-            << top_vecs_[layer_id][top_id]->width() << " ("
-            << top_vecs_[layer_id][top_id]->count() << ")";
+                  << top_vecs_[layer_id][top_id]->channels() << " "
+                  << top_vecs_[layer_id][top_id]->height() << " "
+                  << top_vecs_[layer_id][top_id]->width() << " ("
+                  << top_vecs_[layer_id][top_id]->count() << ")";
         if (layer->loss(top_id)) {
           LOG(INFO) << "    with loss weight " << layer->loss(top_id);
         }
@@ -129,7 +135,8 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
       memory_used_ += top_vecs_[layer_id][top_id]->count();
     }
     if (client_id_ == 0 && thread_id_ == 0) {
-      DLOG(INFO) << "Memory required for data: " << memory_used_ * sizeof(Dtype);
+      DLOG(INFO) << "Memory required for data: "
+                 << memory_used_ * sizeof(Dtype);
     }
     const int blobs_lr_size = layer_param.blobs_lr_size();
     const int num_param_blobs = layers_[layer_id]->blobs().size();
@@ -178,14 +185,16 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
   for (int layer_id = layers_.size() - 1; layer_id >= 0; --layer_id) {
     bool layer_contributes_loss = false;
     for (int top_id = 0; top_id < top_vecs_[layer_id].size(); ++top_id) {
-      const string& blob_name = blob_names_[top_id_vecs_[layer_id][top_id]];
+      const string &blob_name = blob_names_[top_id_vecs_[layer_id][top_id]];
       if (layers_[layer_id]->loss(top_id) ||
           (blobs_under_loss.find(blob_name) != blobs_under_loss.end())) {
         layer_contributes_loss = true;
         break;
       }
     }
-    if (!layer_contributes_loss) { layer_need_backward_[layer_id] = false; }
+    if (!layer_contributes_loss) {
+      layer_need_backward_[layer_id] = false;
+    }
     if (client_id_ == 0 && thread_id_ == 0) {
       if (layer_need_backward_[layer_id]) {
         LOG(INFO) << layer_names_[layer_id] << " needs backward computation.";
@@ -197,7 +206,7 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
     for (int bottom_id = 0; bottom_id < bottom_vecs_[layer_id].size();
          ++bottom_id) {
       if (layer_contributes_loss) {
-        const string& blob_name =
+        const string &blob_name =
             blob_names_[bottom_id_vecs_[layer_id][bottom_id]];
         blobs_under_loss.insert(blob_name);
       } else {
@@ -226,7 +235,7 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
   }
   // In the end, all remaining blobs are considered output blobs.
   for (set<string>::iterator it = available_blobs.begin();
-      it != available_blobs.end(); ++it) {
+       it != available_blobs.end(); ++it) {
     if (client_id_ == 0 && thread_id_ == 0) {
       LOG(INFO) << "This network produces output " << *it;
     }
@@ -250,9 +259,10 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
 
 // Basically copied from Init()
 template <typename Dtype>
-const int Net<Dtype>::InitPS(const NetParameter& in_param, 
-    bool create_ps_tables, int num_additional_tables,
-    map<string, vector<int> >* layer_name_to_blob_global_idx) {
+const int
+Net<Dtype>::InitPS(const NetParameter &in_param, bool create_ps_tables,
+                   int num_additional_tables,
+                   map<string, vector<int>> *layer_name_to_blob_global_idx) {
   // Filter layers based on their include/exclude rules and
   // the current NetState.
   NetParameter filtered_param;
@@ -266,20 +276,20 @@ const int Net<Dtype>::InitPS(const NetParameter& in_param,
     // go through all layers to count num_tables
     int num_tables = 0;
     for (int layer_id = 0; layer_id < param.layers_size(); ++layer_id) {
-      const LayerParameter& layer_param = param.layers(layer_id);
+      const LayerParameter &layer_param = param.layers(layer_id);
       num_tables += GetNumGlobalTables(layer_param);
     }
     num_tables += num_additional_tables;
-    //table_group_config.num_tables = num_tables;
+    // table_group_config.num_tables = num_tables;
     petuum::InitTableGroupConfig(&table_group_config, num_tables);
-  
-    petuum::PSTableGroup::RegisterRow<petuum::DenseRow<Dtype> >
-      (kDenseRowDtypeID);
+
+    petuum::PSTableGroup::RegisterRow<petuum::DenseRow<Dtype>>(
+        kDenseRowDtypeID);
     // Use false to not let main thread access table API.
     petuum::PSTableGroup::Init(table_group_config, false);
 
     LOG(INFO) << "TableGroupInit done";
-  } 
+  }
 
   // set up the network and create ps table if necessary
   map<string, int> blob_name_to_idx;
@@ -288,34 +298,34 @@ const int Net<Dtype>::InitPS(const NetParameter& in_param,
       << "Incorrect input blob dimension specifications.";
   for (int input_id = 0; input_id < param.input_size(); ++input_id) {
     const int layer_id = -1;
-    PseudoAppendTop(param, layer_id, input_id, &available_blobs, 
-        &blob_name_to_idx);
+    PseudoAppendTop(param, layer_id, input_id, &available_blobs,
+                    &blob_name_to_idx);
   }
-  // For each layer, set up their input and output, 
-  // create PS table if necessary. 
+  // For each layer, set up their input and output,
+  // create PS table if necessary.
   bottom_vecs_.resize(param.layers_size());
   top_vecs_.resize(param.layers_size());
   int table_id = 0;
   int num_ip_layers = 0;
   for (int layer_id = 0; layer_id < param.layers_size(); ++layer_id) {
-    const LayerParameter& layer_param = param.layers(layer_id);
-    layers_.push_back(shared_ptr<Layer<Dtype> >(GetLayer<Dtype>(layer_param)));
-    layer_names_.push_back(layer_param.name()); 
+    const LayerParameter &layer_param = param.layers(layer_id);
+    layers_.push_back(shared_ptr<Layer<Dtype>>(GetLayer<Dtype>(layer_param)));
+    layer_names_.push_back(layer_param.name());
     // Figure out this layer's input and output
     for (int bottom_id = 0; bottom_id < layer_param.bottom_size();
          ++bottom_id) {
-      PseudoAppendBottom(param, layer_id, bottom_id, &available_blobs, 
+      PseudoAppendBottom(param, layer_id, bottom_id, &available_blobs,
                          &blob_name_to_idx);
     }
     int num_top = layer_param.top_size();
     for (int top_id = 0; top_id < num_top; ++top_id) {
-      PseudoAppendTop(param, layer_id, top_id, &available_blobs, 
-	    &blob_name_to_idx);
+      PseudoAppendTop(param, layer_id, top_id, &available_blobs,
+                      &blob_name_to_idx);
     }
     // If the layer specifies that AutoTopBlobs() -> true and the LayerParameter
     // specified fewer than the required number (as specified by
     // ExactNumTopBlobs() or MinTopBlobs()), add them here.
-    Layer<Dtype>* layer = layers_[layer_id].get();
+    Layer<Dtype> *layer = layers_[layer_id].get();
     if (layer->AutoTopBlobs()) {
       const int needed_num_top =
           std::max(layer->MinTopBlobs(), layer->ExactNumTopBlobs());
@@ -327,9 +337,9 @@ const int Net<Dtype>::InitPS(const NetParameter& in_param,
       }
     }
     // After this layer is connected, Set it up and create ps tables.
-    layers_[layer_id]->SetUp(bottom_vecs_[layer_id], &top_vecs_[layer_id], 
-        net_id_, thread_id_, create_ps_tables, &table_id, 
-        layer_name_to_blob_global_idx);
+    layers_[layer_id]->SetUp(bottom_vecs_[layer_id], &top_vecs_[layer_id],
+                             net_id_, thread_id_, create_ps_tables, &table_id,
+                             layer_name_to_blob_global_idx);
 
     const int blobs_lr_size = layer_param.blobs_lr_size();
     const int num_param_blobs = layers_[layer_id]->blobs().size();
@@ -355,7 +365,7 @@ const int Net<Dtype>::InitPS(const NetParameter& in_param,
 
   // In the end, all remaining blobs are considered output blobs.
   for (set<string>::iterator it = available_blobs.begin();
-      it != available_blobs.end(); ++it) {
+       it != available_blobs.end(); ++it) {
     net_output_blobs_.push_back(blobs_[blob_name_to_idx[*it]].get());
   }
 
@@ -363,30 +373,30 @@ const int Net<Dtype>::InitPS(const NetParameter& in_param,
 }
 
 template <typename Dtype>
-void Net<Dtype>::FilterNet(const NetParameter& param,
-    NetParameter* param_filtered, const int thread_id) {
+void Net<Dtype>::FilterNet(const NetParameter &param,
+                           NetParameter *param_filtered, const int thread_id) {
   NetState net_state(param.state());
   // Let the phase of the net be the current global phase provided in the Caffe
   // singleton, unless explicitly provided by the state.
   if (!net_state.has_phase()) {
     switch (Caffe::phase(thread_id)) {
-      case Caffe::TRAIN:
-        net_state.set_phase(TRAIN);
-        break;
-      case Caffe::TEST:
-        net_state.set_phase(TEST);
-        break;
-      default:
-        LOG(FATAL) << "Unknown phase: " << Caffe::phase(thread_id);
+    case Caffe::TRAIN:
+      net_state.set_phase(TRAIN);
+      break;
+    case Caffe::TEST:
+      net_state.set_phase(TEST);
+      break;
+    default:
+      LOG(FATAL) << "Unknown phase: " << Caffe::phase(thread_id);
     }
   }
   param_filtered->CopyFrom(param);
   param_filtered->clear_layers();
   for (int i = 0; i < param.layers_size(); ++i) {
-    const LayerParameter& layer_param = param.layers(i);
-    const string& layer_name = layer_param.name();
+    const LayerParameter &layer_param = param.layers(i);
+    const string &layer_name = layer_param.name();
     CHECK(layer_param.include_size() == 0 || layer_param.exclude_size() == 0)
-          << "Specify either include rules or exclude rules; not both.";
+        << "Specify either include rules or exclude rules; not both.";
     // If no include rules are specified, the layer is included by default and
     // only excluded if it meets one of the exclude rules.
     bool layer_included = (layer_param.include_size() == 0);
@@ -407,23 +417,23 @@ void Net<Dtype>::FilterNet(const NetParameter& param,
 }
 
 template <typename Dtype>
-bool Net<Dtype>::StateMeetsRule(const NetState& state,
-    const NetStateRule& rule, const string& layer_name) {
+bool Net<Dtype>::StateMeetsRule(const NetState &state, const NetStateRule &rule,
+                                const string &layer_name) {
   // Check whether the rule is broken due to phase.
   if (rule.has_phase()) {
-      if (rule.phase() != state.phase()) {
-        LOG(INFO) << "The NetState phase (" << state.phase()
-          << ") differed from the phase (" << rule.phase()
-          << ") specified by a rule in layer " << layer_name;
-        return false;
-      }
+    if (rule.phase() != state.phase()) {
+      LOG(INFO) << "The NetState phase (" << state.phase()
+                << ") differed from the phase (" << rule.phase()
+                << ") specified by a rule in layer " << layer_name;
+      return false;
+    }
   }
   // Check whether the rule is broken due to min level.
   if (rule.has_min_level()) {
     if (state.level() < rule.min_level()) {
       LOG(INFO) << "The NetState level (" << state.level()
-          << ") is above the min_level (" << rule.min_level()
-          << ") specified by a rule in layer " << layer_name;
+                << ") is above the min_level (" << rule.min_level()
+                << ") specified by a rule in layer " << layer_name;
       return false;
     }
   }
@@ -431,8 +441,8 @@ bool Net<Dtype>::StateMeetsRule(const NetState& state,
   if (rule.has_max_level()) {
     if (state.level() > rule.max_level()) {
       LOG(INFO) << "The NetState level (" << state.level()
-          << ") is above the max_level (" << rule.max_level()
-          << ") specified by a rule in layer " << layer_name;
+                << ") is above the max_level (" << rule.max_level()
+                << ") specified by a rule in layer " << layer_name;
       return false;
     }
   }
@@ -442,7 +452,9 @@ bool Net<Dtype>::StateMeetsRule(const NetState& state,
     // Check that the NetState contains the rule's ith stage.
     bool has_stage = false;
     for (int j = 0; !has_stage && j < state.stage_size(); ++j) {
-      if (rule.stage(i) == state.stage(j)) { has_stage = true; }
+      if (rule.stage(i) == state.stage(j)) {
+        has_stage = true;
+      }
     }
     if (!has_stage) {
       LOG(INFO) << "The NetState did not contain stage '" << rule.stage(i)
@@ -456,7 +468,9 @@ bool Net<Dtype>::StateMeetsRule(const NetState& state,
     // Check that the NetState contains the rule's ith not_stage.
     bool has_stage = false;
     for (int j = 0; !has_stage && j < state.stage_size(); ++j) {
-      if (rule.not_stage(i) == state.stage(j)) { has_stage = true; }
+      if (rule.not_stage(i) == state.stage(j)) {
+        has_stage = true;
+      }
     }
     if (has_stage) {
       LOG(INFO) << "The NetState contained a not_stage '" << rule.not_stage(i)
@@ -470,14 +484,15 @@ bool Net<Dtype>::StateMeetsRule(const NetState& state,
 // Helper for Net::Init: add a new input or top blob to the net.  (Inputs have
 // layer_id == -1, tops have layer_id >= 0.)
 template <typename Dtype>
-void Net<Dtype>::AppendTop(const NetParameter& param, const int layer_id,
-                           const int top_id, set<string>* available_blobs,
-                           map<string, int>* blob_name_to_idx) {
-  shared_ptr<LayerParameter> layer_param((layer_id >= 0) ?
-    (new LayerParameter(param.layers(layer_id))) : NULL);
-  const string& blob_name = layer_param ?
-      (layer_param->top_size() > top_id ?
-          layer_param->top(top_id) : "(automatic)") : param.input(top_id);
+void Net<Dtype>::AppendTop(const NetParameter &param, const int layer_id,
+                           const int top_id, set<string> *available_blobs,
+                           map<string, int> *blob_name_to_idx) {
+  shared_ptr<LayerParameter> layer_param(
+      (layer_id >= 0) ? (new LayerParameter(param.layers(layer_id))) : NULL);
+  const string &blob_name =
+      layer_param ? (layer_param->top_size() > top_id ? layer_param->top(top_id)
+                                                      : "(automatic)")
+                  : param.input(top_id);
   // Check if we are doing in-place computation
   if (blob_name_to_idx && layer_param && layer_param->bottom_size() > top_id &&
       blob_name == layer_param->bottom(top_id)) {
@@ -501,18 +516,19 @@ void Net<Dtype>::AppendTop(const NetParameter& param, const int layer_id,
         LOG(INFO) << "Input " << top_id << " -> " << blob_name;
       }
     }
-    shared_ptr<Blob<Dtype> > blob_pointer(new Blob<Dtype>());
+    shared_ptr<Blob<Dtype>> blob_pointer(new Blob<Dtype>());
     const int blob_id = blobs_.size();
     blobs_.push_back(blob_pointer);
     blob_names_.push_back(blob_name);
     blob_need_backward_.push_back(false);
-    if (blob_name_to_idx) { (*blob_name_to_idx)[blob_name] = blob_id; }
+    if (blob_name_to_idx) {
+      (*blob_name_to_idx)[blob_name] = blob_id;
+    }
     if (layer_id == -1) {
       // Set the (explicitly specified) dimensions of the input blob.
-      blob_pointer->Reshape(param.input_dim(top_id * 4),
-                            param.input_dim(top_id * 4 + 1),
-                            param.input_dim(top_id * 4 + 2),
-                            param.input_dim(top_id * 4 + 3));
+      blob_pointer->Reshape(
+          param.input_dim(top_id * 4), param.input_dim(top_id * 4 + 1),
+          param.input_dim(top_id * 4 + 2), param.input_dim(top_id * 4 + 3));
       net_input_blob_indices_.push_back(blob_id);
       net_input_blobs_.push_back(blob_pointer.get());
     } else {
@@ -520,19 +536,21 @@ void Net<Dtype>::AppendTop(const NetParameter& param, const int layer_id,
       top_vecs_[layer_id].push_back(blob_pointer.get());
     }
   }
-  if (available_blobs) { available_blobs->insert(blob_name); }
+  if (available_blobs) {
+    available_blobs->insert(blob_name);
+  }
 }
 
 // Helper for Net::Init: add a new bottom blob to the net.
 template <typename Dtype>
-int Net<Dtype>::AppendBottom(const NetParameter& param,
-    const int layer_id, const int bottom_id,
-    set<string>* available_blobs, map<string, int>* blob_name_to_idx) {
-  const LayerParameter& layer_param = param.layers(layer_id);
-  const string& blob_name = layer_param.bottom(bottom_id);
+int Net<Dtype>::AppendBottom(const NetParameter &param, const int layer_id,
+                             const int bottom_id, set<string> *available_blobs,
+                             map<string, int> *blob_name_to_idx) {
+  const LayerParameter &layer_param = param.layers(layer_id);
+  const string &blob_name = layer_param.bottom(bottom_id);
   if (available_blobs->find(blob_name) == available_blobs->end()) {
-    LOG(FATAL) << "Unknown blob input " << blob_name
-               << " (at index " << bottom_id << ") to layer " << layer_id;
+    LOG(FATAL) << "Unknown blob input " << blob_name << " (at index "
+               << bottom_id << ") to layer " << layer_id;
   }
   const int blob_id = (*blob_name_to_idx)[blob_name];
   if (client_id_ == 0 && thread_id_ == 0) {
@@ -547,10 +565,10 @@ int Net<Dtype>::AppendBottom(const NetParameter& param,
 }
 
 template <typename Dtype>
-void Net<Dtype>::AppendParam(const NetParameter& param, const int layer_id,
+void Net<Dtype>::AppendParam(const NetParameter &param, const int layer_id,
                              const int param_id) {
-  const LayerParameter& layer_param = layers_[layer_id]->layer_param();
-  vector<int>& layer_blob_params_id = layers_[layer_id]->blob_params_id();
+  const LayerParameter &layer_param = layers_[layer_id]->layer_param();
+  vector<int> &layer_blob_params_id = layers_[layer_id]->blob_params_id();
   const int param_size = layer_param.param_size();
   string param_name = param_size ? layer_param.param(param_id) : "";
   if (param_name.size()) {
@@ -566,8 +584,9 @@ void Net<Dtype>::AppendParam(const NetParameter& param, const int layer_id,
   layer_blob_params_id.push_back(net_param_id);
 
   param_layer_indices_.push_back(make_pair(layer_id, param_id));
-  if (!param_size || !param_name.size() || (param_name.size() &&
-      param_names_index_.find(param_name) == param_names_index_.end())) {
+  if (!param_size || !param_name.size() ||
+      (param_name.size() &&
+       param_names_index_.find(param_name) == param_names_index_.end())) {
     // This layer "owns" this parameter blob -- it is either anonymous
     // (i.e., not given a param_name) or explicitly given a name that we
     // haven't already seen.
@@ -579,7 +598,7 @@ void Net<Dtype>::AppendParam(const NetParameter& param, const int layer_id,
     // Named param blob with name we've seen before: share params
     const int owner_net_param_id = param_names_index_[param_name];
     param_owners_.push_back(owner_net_param_id);
-    const pair<int, int>& owner_index =
+    const pair<int, int> &owner_index =
         param_layer_indices_[owner_net_param_id];
     const int owner_layer_id = owner_index.first;
     const int owner_param_id = owner_index.second;
@@ -588,8 +607,8 @@ void Net<Dtype>::AppendParam(const NetParameter& param, const int layer_id,
                 << "layer '" << layer_names_[owner_layer_id] << "', param "
                 << "index " << owner_param_id;
     }
-    Blob<Dtype>* this_blob = layers_[layer_id]->blobs()[param_id].get();
-    Blob<Dtype>* owner_blob =
+    Blob<Dtype> *this_blob = layers_[layer_id]->blobs()[param_id].get();
+    Blob<Dtype> *owner_blob =
         layers_[owner_layer_id]->blobs()[owner_param_id].get();
     const int blob_share_mode_size = layer_param.blob_share_mode_size();
     if (blob_share_mode_size > param_id &&
@@ -615,52 +634,58 @@ void Net<Dtype>::AppendParam(const NetParameter& param, const int layer_id,
 }
 
 template <typename Dtype>
-void Net<Dtype>::PseudoAppendTop(const NetParameter& param, const int layer_id,
-                                 const int top_id, set<string>* available_blobs,
-                                 map<string, int>* blob_name_to_idx) {
-  shared_ptr<LayerParameter> layer_param((layer_id >= 0) ?
-    (new LayerParameter(param.layers(layer_id))) : NULL);
-  const string& blob_name = layer_param ?
-    (layer_param->top_size() > top_id ?
-		layer_param->top(top_id) : "(automatic)") : param.input(top_id);
+void Net<Dtype>::PseudoAppendTop(const NetParameter &param, const int layer_id,
+                                 const int top_id, set<string> *available_blobs,
+                                 map<string, int> *blob_name_to_idx) {
+  shared_ptr<LayerParameter> layer_param(
+      (layer_id >= 0) ? (new LayerParameter(param.layers(layer_id))) : NULL);
+  const string &blob_name =
+      layer_param ? (layer_param->top_size() > top_id ? layer_param->top(top_id)
+                                                      : "(automatic)")
+                  : param.input(top_id);
   // Check if we are doing in-place computation
   if (blob_name_to_idx && layer_param && layer_param->bottom_size() > top_id &&
-	  blob_name == layer_param->bottom(top_id)) {
-	// In-place computation
-	top_vecs_[layer_id].push_back(blobs_[(*blob_name_to_idx)[blob_name]].get());
+      blob_name == layer_param->bottom(top_id)) {
+    // In-place computation
+    top_vecs_[layer_id].push_back(blobs_[(*blob_name_to_idx)[blob_name]].get());
   } else if (blob_name_to_idx &&
-			 blob_name_to_idx->find(blob_name) != blob_name_to_idx->end()) {
-	// If we are not doing in-place computation but have duplicated blobs,
-	// raise an error.
-	LOG(FATAL) << "Duplicate blobs produced by multiple sources.";
+             blob_name_to_idx->find(blob_name) != blob_name_to_idx->end()) {
+    // If we are not doing in-place computation but have duplicated blobs,
+    // raise an error.
+    LOG(FATAL) << "Duplicate blobs produced by multiple sources.";
   } else {
-	// Normal output.
-    shared_ptr<Blob<Dtype> > blob_pointer(new Blob<Dtype>());
+    // Normal output.
+    shared_ptr<Blob<Dtype>> blob_pointer(new Blob<Dtype>());
     const int blob_id = blobs_.size();
     blobs_.push_back(blob_pointer);
-    if (blob_name_to_idx) { (*blob_name_to_idx)[blob_name] = blob_id; }
+    if (blob_name_to_idx) {
+      (*blob_name_to_idx)[blob_name] = blob_id;
+    }
     if (layer_id == -1) {
       // Set the (explicitly specified) dimensions of the input blob.
       // Do not accturally allocate memory since we only need the size info
       blob_pointer->ReshapeWithoutAllocation(
-         param.input_dim(top_id * 4), param.input_dim(top_id * 4 + 1),
-         param.input_dim(top_id * 4 + 2), param.input_dim(top_id * 4 + 3));
+          param.input_dim(top_id * 4), param.input_dim(top_id * 4 + 1),
+          param.input_dim(top_id * 4 + 2), param.input_dim(top_id * 4 + 3));
     } else {
       top_vecs_[layer_id].push_back(blob_pointer.get());
     }
   }
-  if (available_blobs) { available_blobs->insert(blob_name); }
+  if (available_blobs) {
+    available_blobs->insert(blob_name);
+  }
 }
 
 template <typename Dtype>
-int Net<Dtype>::PseudoAppendBottom(const NetParameter& param, const int layer_id, 
-    const int bottom_id, set<string>* available_blobs, 
-    map<string, int>* blob_name_to_idx) {
-  const LayerParameter& layer_param = param.layers(layer_id);
-  const string& blob_name = layer_param.bottom(bottom_id);
+int Net<Dtype>::PseudoAppendBottom(const NetParameter &param,
+                                   const int layer_id, const int bottom_id,
+                                   set<string> *available_blobs,
+                                   map<string, int> *blob_name_to_idx) {
+  const LayerParameter &layer_param = param.layers(layer_id);
+  const string &blob_name = layer_param.bottom(bottom_id);
   if (available_blobs->find(blob_name) == available_blobs->end()) {
-    LOG(FATAL) << "Unknown blob input " << blob_name
-               << " (at index " << bottom_id << ") to layer " << layer_id;
+    LOG(FATAL) << "Unknown blob input " << blob_name << " (at index "
+               << bottom_id << ") to layer " << layer_id;
   }
   const int blob_id = (*blob_name_to_idx)[blob_name];
   bottom_vecs_[layer_id].push_back(blobs_[blob_id].get());
@@ -668,13 +693,12 @@ int Net<Dtype>::PseudoAppendBottom(const NetParameter& param, const int layer_id
   return blob_id;
 }
 
-template <typename Dtype>
-void Net<Dtype>::GetLearningRateAndWeightDecay() {
+template <typename Dtype> void Net<Dtype>::GetLearningRateAndWeightDecay() {
   if (client_id_ == 0 && thread_id_ == 0) {
     LOG(INFO) << "Collecting Learning Rate and Weight Decay.";
   }
   for (int i = 0; i < layers_.size(); ++i) {
-    vector<shared_ptr<Blob<Dtype> > >& layer_blobs = layers_[i]->blobs();
+    vector<shared_ptr<Blob<Dtype>>> &layer_blobs = layers_[i]->blobs();
     // push the learning rate mutlipliers
     if (layers_[i]->layer_param().blobs_lr_size()) {
       CHECK_EQ(layers_[i]->layer_param().blobs_lr_size(), layer_blobs.size());
@@ -691,7 +715,7 @@ void Net<Dtype>::GetLearningRateAndWeightDecay() {
     // push the weight decay multipliers
     if (layers_[i]->layer_param().weight_decay_size()) {
       CHECK_EQ(layers_[i]->layer_param().weight_decay_size(),
-          layer_blobs.size());
+               layer_blobs.size());
       for (int j = 0; j < layer_blobs.size(); ++j) {
         float local_decay = layers_[i]->layer_param().weight_decay(j);
         CHECK_GE(local_decay, 0.);
@@ -705,8 +729,7 @@ void Net<Dtype>::GetLearningRateAndWeightDecay() {
   }
 }
 
-template <typename Dtype>
-Dtype Net<Dtype>::ForwardFromTo(int start, int end) {
+template <typename Dtype> Dtype Net<Dtype>::ForwardFromTo(int start, int end) {
   CHECK_GE(start, 0);
   CHECK_LT(end, layers_.size());
   Dtype loss = 0;
@@ -714,23 +737,23 @@ Dtype Net<Dtype>::ForwardFromTo(int start, int end) {
     layers_[i]->Reshape(bottom_vecs_[i], &top_vecs_[i]);
     Dtype layer_loss = layers_[i]->Forward(bottom_vecs_[i], &top_vecs_[i]);
     loss += layer_loss;
-    if (debug_info_) { ForwardDebugInfo(i); }
+    if (debug_info_) {
+      ForwardDebugInfo(i);
+    }
   }
   return loss;
 }
 
-template <typename Dtype>
-Dtype Net<Dtype>::ForwardFrom(int start) {
+template <typename Dtype> Dtype Net<Dtype>::ForwardFrom(int start) {
   return ForwardFromTo(start, layers_.size() - 1);
 }
 
-template <typename Dtype>
-Dtype Net<Dtype>::ForwardTo(int end) {
+template <typename Dtype> Dtype Net<Dtype>::ForwardTo(int end) {
   return ForwardFromTo(0, end);
 }
 
 template <typename Dtype>
-const vector<Blob<Dtype>*>& Net<Dtype>::ForwardPrefilled(Dtype* loss) {
+const vector<Blob<Dtype> *> &Net<Dtype>::ForwardPrefilled(Dtype *loss) {
   if (loss != NULL) {
     *loss = ForwardFromTo(0, layers_.size() - 1);
   } else {
@@ -740,8 +763,8 @@ const vector<Blob<Dtype>*>& Net<Dtype>::ForwardPrefilled(Dtype* loss) {
 }
 
 template <typename Dtype>
-const vector<Blob<Dtype>*>& Net<Dtype>::Forward(
-    const vector<Blob<Dtype>*> & bottom, Dtype* loss) {
+const vector<Blob<Dtype> *> &
+Net<Dtype>::Forward(const vector<Blob<Dtype> *> &bottom, Dtype *loss) {
   // Copy bottom to internal bottom
   for (int i = 0; i < bottom.size(); ++i) {
     net_input_blobs_[i]->CopyFrom(*bottom[i]);
@@ -750,7 +773,7 @@ const vector<Blob<Dtype>*>& Net<Dtype>::Forward(
 }
 
 template <typename Dtype>
-string Net<Dtype>::Forward(const string& input_blob_protos, Dtype* loss) {
+string Net<Dtype>::Forward(const string &input_blob_protos, Dtype *loss) {
   BlobProtoVector blob_proto_vec;
   if (net_input_blobs_.size()) {
     blob_proto_vec.ParseFromString(input_blob_protos);
@@ -770,15 +793,16 @@ string Net<Dtype>::Forward(const string& input_blob_protos, Dtype* loss) {
   return output;
 }
 
-template <typename Dtype>
-void Net<Dtype>::BackwardFromTo(int start, int end) {
+template <typename Dtype> void Net<Dtype>::BackwardFromTo(int start, int end) {
   CHECK_GE(end, 0);
   CHECK_LT(start, layers_.size());
   for (int i = start; i >= end; --i) {
     if (layer_need_backward_[i]) {
-      layers_[i]->Backward(
-          top_vecs_[i], bottom_need_backward_[i], &bottom_vecs_[i]);
-      if (debug_info_) { BackwardDebugInfo(i); }
+      layers_[i]->Backward(top_vecs_[i], bottom_need_backward_[i],
+                           &bottom_vecs_[i]);
+      if (debug_info_) {
+        BackwardDebugInfo(i);
+      }
     }
   }
 }
@@ -786,80 +810,83 @@ void Net<Dtype>::BackwardFromTo(int start, int end) {
 template <typename Dtype>
 void Net<Dtype>::ForwardDebugInfo(const int layer_id) {
   for (int top_id = 0; top_id < top_vecs_[layer_id].size(); ++top_id) {
-    const Blob<Dtype>& blob = *top_vecs_[layer_id][top_id];
-    const string& blob_name = blob_names_[top_id_vecs_[layer_id][top_id]];
+    const Blob<Dtype> &blob = *top_vecs_[layer_id][top_id];
+    const string &blob_name = blob_names_[top_id_vecs_[layer_id][top_id]];
     const Dtype data_abs_val_mean = blob.asum_data() / blob.count();
     if (client_id_ == 0 && thread_id_ == 0) {
       LOG(INFO) << "    [Forward] "
-         << "Layer " << layer_names_[layer_id] << ", top blob " << blob_name
-         << " data: " << data_abs_val_mean;
+                << "Layer " << layer_names_[layer_id] << ", top blob "
+                << blob_name << " data: " << data_abs_val_mean;
     }
   }
 }
 
 template <typename Dtype>
 void Net<Dtype>::BackwardDebugInfo(const int layer_id) {
-  const vector<Blob<Dtype>*>& bottom_vec = bottom_vecs_[layer_id];
+  const vector<Blob<Dtype> *> &bottom_vec = bottom_vecs_[layer_id];
   for (int bottom_id = 0; bottom_id < bottom_vec.size(); ++bottom_id) {
-    if (!bottom_need_backward_[layer_id][bottom_id]) { continue; }
-    const Blob<Dtype>& blob = *bottom_vec[bottom_id];
-    const string& blob_name = blob_names_[bottom_id_vecs_[layer_id][bottom_id]];
+    if (!bottom_need_backward_[layer_id][bottom_id]) {
+      continue;
+    }
+    const Blob<Dtype> &blob = *bottom_vec[bottom_id];
+    const string &blob_name = blob_names_[bottom_id_vecs_[layer_id][bottom_id]];
     const Dtype diff_abs_val_mean = blob.asum_diff() / blob.count();
     if (client_id_ == 0 && thread_id_ == 0) {
       LOG(INFO) << "    [Backward] "
-          << "Layer " << layer_names_[layer_id] << ", bottom blob " << blob_name
-          << " diff: " << diff_abs_val_mean;
+                << "Layer " << layer_names_[layer_id] << ", bottom blob "
+                << blob_name << " diff: " << diff_abs_val_mean;
     }
   }
   for (int param_id = 0; param_id < layers_[layer_id]->blobs().size();
        ++param_id) {
-    if (!layers_[layer_id]->param_propagate_down(param_id)) { continue; }
-    const Blob<Dtype>& blob = *layers_[layer_id]->blobs()[param_id];
+    if (!layers_[layer_id]->param_propagate_down(param_id)) {
+      continue;
+    }
+    const Blob<Dtype> &blob = *layers_[layer_id]->blobs()[param_id];
     const Dtype diff_abs_val_mean = blob.asum_diff() / blob.count();
     if (client_id_ == 0 && thread_id_ == 0) {
       LOG(INFO) << "    [Backward] "
-          << "Layer " << layer_names_[layer_id] << ", param blob " << param_id
-          << " diff: " << diff_abs_val_mean;
+                << "Layer " << layer_names_[layer_id] << ", param blob "
+                << param_id << " diff: " << diff_abs_val_mean;
     }
   }
 }
 
-template <typename Dtype>
-void Net<Dtype>::UpdateDebugInfo(const int param_id) {
-  const Blob<Dtype>& blob = *params_[param_id];
+template <typename Dtype> void Net<Dtype>::UpdateDebugInfo(const int param_id) {
+  const Blob<Dtype> &blob = *params_[param_id];
   const int param_owner = param_owners_[param_id];
-  const string& layer_name = layer_names_[param_layer_indices_[param_id].first];
-  const string& param_display_name = param_display_names_[param_id];
+  const string &layer_name = layer_names_[param_layer_indices_[param_id].first];
+  const string &param_display_name = param_display_names_[param_id];
   const Dtype diff_abs_val_mean = blob.asum_diff() / blob.count();
   if (param_owner < 0) {
     const Dtype data_abs_val_mean = blob.asum_data() / blob.count();
     if (client_id_ == 0 && thread_id_ == 0) {
-      LOG(INFO) << "    [Update] Layer " << layer_name
-          << ", param " << param_display_name
-          << " data: " << data_abs_val_mean << "; diff: " << diff_abs_val_mean;
-    } 
+      LOG(INFO) << "    [Update] Layer " << layer_name << ", param "
+                << param_display_name << " data: " << data_abs_val_mean
+                << "; diff: " << diff_abs_val_mean;
+    }
   } else {
-    const string& owner_layer_name =
+    const string &owner_layer_name =
         layer_names_[param_layer_indices_[param_owner].first];
     if (client_id_ == 0 && thread_id_ == 0) {
-      LOG(INFO) << "    [Update] Layer " << layer_name
-          << ", param blob " << param_display_name
-          << " (owned by layer " << owner_layer_name << ", "
-          << "param " << param_display_names_[param_owners_[param_id]] << ")"
-          << " diff: " << diff_abs_val_mean;
+      LOG(INFO) << "    [Update] Layer " << layer_name << ", param blob "
+                << param_display_name << " (owned by layer " << owner_layer_name
+                << ", "
+                << "param " << param_display_names_[param_owners_[param_id]]
+                << ")"
+                << " diff: " << diff_abs_val_mean;
     }
   }
 }
 
-template <typename Dtype>
-void Net<Dtype>::ShareTrainedLayersWith(Net* other) {
+template <typename Dtype> void Net<Dtype>::ShareTrainedLayersWith(Net *other) {
   int num_source_layers = other->layers().size();
   for (int i = 0; i < num_source_layers; ++i) {
-    Layer<Dtype>* source_layer = other->layers()[i].get();
-    const string& source_layer_name = other->layer_names()[i];
+    Layer<Dtype> *source_layer = other->layers()[i].get();
+    const string &source_layer_name = other->layer_names()[i];
     int target_layer_id = 0;
     while (target_layer_id != layer_names_.size() &&
-        layer_names_[target_layer_id] != source_layer_name) {
+           layer_names_[target_layer_id] != source_layer_name) {
       ++target_layer_id;
     }
     if (target_layer_id == layer_names_.size()) {
@@ -867,12 +894,12 @@ void Net<Dtype>::ShareTrainedLayersWith(Net* other) {
       continue;
     }
     DLOG(INFO) << "Copying source layer " << source_layer_name;
-    vector<shared_ptr<Blob<Dtype> > >& target_blobs =
+    vector<shared_ptr<Blob<Dtype>>> &target_blobs =
         layers_[target_layer_id]->blobs();
     CHECK_EQ(target_blobs.size(), source_layer->blobs().size())
         << "Incompatible number of blobs for layer " << source_layer_name;
     for (int j = 0; j < target_blobs.size(); ++j) {
-      Blob<Dtype>* source_blob = source_layer->blobs()[j].get();
+      Blob<Dtype> *source_blob = source_layer->blobs()[j].get();
       CHECK_EQ(target_blobs[j]->num(), source_blob->num());
       CHECK_EQ(target_blobs[j]->channels(), source_blob->channels());
       CHECK_EQ(target_blobs[j]->height(), source_blob->height());
@@ -882,38 +909,34 @@ void Net<Dtype>::ShareTrainedLayersWith(Net* other) {
   }
 }
 
-template <typename Dtype>
-void Net<Dtype>::BackwardFrom(int start) {
+template <typename Dtype> void Net<Dtype>::BackwardFrom(int start) {
   BackwardFromTo(start, 0);
 }
 
-template <typename Dtype>
-void Net<Dtype>::BackwardTo(int end) {
+template <typename Dtype> void Net<Dtype>::BackwardTo(int end) {
   BackwardFromTo(layers_.size() - 1, end);
 }
 
-template <typename Dtype>
-void Net<Dtype>::Backward() {
+template <typename Dtype> void Net<Dtype>::Backward() {
   BackwardFromTo(layers_.size() - 1, 0);
 }
 
-template <typename Dtype>
-void Net<Dtype>::Reshape() {
+template <typename Dtype> void Net<Dtype>::Reshape() {
   for (int i = 0; i < layers_.size(); ++i) {
     layers_[i]->Reshape(bottom_vecs_[i], &top_vecs_[i]);
   }
 }
 
 template <typename Dtype>
-void Net<Dtype>::CopyTrainedLayersFrom(const NetParameter& param, 
-    const bool init_ps_tables) {
+void Net<Dtype>::CopyTrainedLayersFrom(const NetParameter &param,
+                                       const bool init_ps_tables) {
   int num_source_layers = param.layers_size();
   for (int i = 0; i < num_source_layers; ++i) {
-    const LayerParameter& source_layer = param.layers(i);
-    const string& source_layer_name = source_layer.name();
+    const LayerParameter &source_layer = param.layers(i);
+    const string &source_layer_name = source_layer.name();
     int target_layer_id = 0;
     while (target_layer_id != layer_names_.size() &&
-        layer_names_[target_layer_id] != source_layer_name) {
+           layer_names_[target_layer_id] != source_layer_name) {
       ++target_layer_id;
     }
     if (target_layer_id == layer_names_.size()) {
@@ -921,7 +944,7 @@ void Net<Dtype>::CopyTrainedLayersFrom(const NetParameter& param,
       continue;
     }
     DLOG(INFO) << "Copying source layer " << source_layer_name;
-    vector<shared_ptr<Blob<Dtype> > >& target_blobs =
+    vector<shared_ptr<Blob<Dtype>>> &target_blobs =
         layers_[target_layer_id]->blobs();
     CHECK_EQ(target_blobs.size(), source_layer.blobs_size())
         << "Incompatible number of blobs for layer " << source_layer_name;
@@ -930,8 +953,10 @@ void Net<Dtype>::CopyTrainedLayersFrom(const NetParameter& param,
       CHECK_EQ(target_blobs[j]->channels(), source_layer.blobs(j).channels());
       CHECK_EQ(target_blobs[j]->height(), source_layer.blobs(j).height());
       CHECK_EQ(target_blobs[j]->width(), source_layer.blobs(j).width());
-      //CHECK_EQ(target_blobs[j]->blob_mode(), source_layer.blobs(j).blob_mode());
-      //CHECK_EQ(target_blobs[j]->global_id(), source_layer.blobs(j).global_id());
+      // CHECK_EQ(target_blobs[j]->blob_mode(),
+      // source_layer.blobs(j).blob_mode());
+      // CHECK_EQ(target_blobs[j]->global_id(),
+      // source_layer.blobs(j).global_id());
       if (client_id_ == 0 && thread_id_ == 0) {
         target_blobs[j]->FromProto(source_layer.blobs(j), init_ps_tables);
       } else {
@@ -942,15 +967,15 @@ void Net<Dtype>::CopyTrainedLayersFrom(const NetParameter& param,
 }
 
 template <typename Dtype>
-void Net<Dtype>::CopyTrainedLayersFrom(const string trained_filename, 
-    const bool init_ps_tables) {
+void Net<Dtype>::CopyTrainedLayersFrom(const string trained_filename,
+                                       const bool init_ps_tables) {
   NetParameter param;
   ReadNetParamsFromBinaryFileOrDie(trained_filename, &param);
   CopyTrainedLayersFrom(param, init_ps_tables);
 }
 
 template <typename Dtype>
-void Net<Dtype>::ToProto(NetParameter* param, bool write_diff) {
+void Net<Dtype>::ToProto(NetParameter *param, bool write_diff) {
   param->Clear();
   param->set_name(name_);
   // Add bottom and top
@@ -959,7 +984,7 @@ void Net<Dtype>::ToProto(NetParameter* param, bool write_diff) {
   }
   DLOG(INFO) << "Serializing " << layers_.size() << " layers";
   for (int i = 0; i < layers_.size(); ++i) {
-    LayerParameter* layer_param = param->add_layers();
+    LayerParameter *layer_param = param->add_layers();
     for (int j = 0; j < bottom_id_vecs_[i].size(); ++j) {
       layer_param->add_bottom(blob_names_[bottom_id_vecs_[i][j]]);
     }
@@ -970,17 +995,20 @@ void Net<Dtype>::ToProto(NetParameter* param, bool write_diff) {
   }
 }
 
-template <typename Dtype>
-void Net<Dtype>::Update() {   
+template <typename Dtype> void Net<Dtype>::Update() {
   // First, accumulate the diffs of any shared parameters into their owner's
   // diff. (Assumes that the learning rate, weight decay, etc. have already been
   // accounted for in the current diff.)
   for (int i = 0; i < params_.size(); ++i) {
-    if (param_owners_[i] < 0) { continue; }
-    if (debug_info_) { UpdateDebugInfo(i); }
+    if (param_owners_[i] < 0) {
+      continue;
+    }
+    if (debug_info_) {
+      UpdateDebugInfo(i);
+    }
     const int count = params_[i]->count();
-    const Dtype* this_diff;
-    Dtype* owner_diff;
+    const Dtype *this_diff;
+    Dtype *owner_diff;
     switch (Caffe::mode()) {
     case Caffe::CPU:
       this_diff = params_[i]->cpu_diff();
@@ -1001,21 +1029,26 @@ void Net<Dtype>::Update() {
     }
   }
 
-  //LOG(INFO) << "update";
-  //petuum::HighResolutionTimer tmp_timer;
-  //tmp_timer.restart();
+  // LOG(INFO) << "update";
+  // petuum::HighResolutionTimer tmp_timer;
+  // tmp_timer.restart();
   // Now, update the owned parameters.
   for (int i = 0; i < params_.size(); ++i) {
-    if (param_owners_[i] >= 0) { continue; }
-    if (debug_info_) { UpdateDebugInfo(i); }
+    if (param_owners_[i] >= 0) {
+      continue;
+    }
+    if (debug_info_) {
+      UpdateDebugInfo(i);
+    }
     params_[i]->UpdatePSTable();
   }
 }
 
-template <typename Dtype>
-void Net<Dtype>::SyncWithPS(const int clock) {
+template <typename Dtype> void Net<Dtype>::SyncWithPS(const int clock) {
   for (int i = 0; i < params_.size(); ++i) {
-    if (param_owners_[i] >= 0) { continue; }
+    if (param_owners_[i] >= 0) {
+      continue;
+    }
     params_[i]->SyncWithPSTable(clock);
   }
 }
@@ -1025,40 +1058,39 @@ void Net<Dtype>::RegisterNetOutputPSTable(const int num_rows) {
   // register rows of loss tables
   for (int ridx = 0; ridx < num_rows; ++ridx) {
     outputs_global_table_.GetAsyncForced(ridx);
-  }   
+  }
+  outputs_global_table_.WaitPendingAsyncGet();
 }
 
-template <typename Dtype>
-bool Net<Dtype>::has_blob(const string& blob_name) {
+template <typename Dtype> bool Net<Dtype>::has_blob(const string &blob_name) {
   return blob_names_index_.find(blob_name) != blob_names_index_.end();
 }
 
 template <typename Dtype>
-const shared_ptr<Blob<Dtype> > Net<Dtype>::blob_by_name(
-    const string& blob_name) {
-  shared_ptr<Blob<Dtype> > blob_ptr;
+const shared_ptr<Blob<Dtype>>
+Net<Dtype>::blob_by_name(const string &blob_name) {
+  shared_ptr<Blob<Dtype>> blob_ptr;
   if (has_blob(blob_name)) {
     blob_ptr = blobs_[blob_names_index_[blob_name]];
   } else {
-    blob_ptr.reset((Blob<Dtype>*)(NULL));
+    blob_ptr.reset((Blob<Dtype> *)(NULL));
     LOG(WARNING) << "Unknown blob name " << blob_name;
   }
   return blob_ptr;
 }
 
-template <typename Dtype>
-bool Net<Dtype>::has_layer(const string& layer_name) {
+template <typename Dtype> bool Net<Dtype>::has_layer(const string &layer_name) {
   return layer_names_index_.find(layer_name) != layer_names_index_.end();
 }
 
 template <typename Dtype>
-const shared_ptr<Layer<Dtype> > Net<Dtype>::layer_by_name(
-    const string& layer_name) {
-  shared_ptr<Layer<Dtype> > layer_ptr;
+const shared_ptr<Layer<Dtype>>
+Net<Dtype>::layer_by_name(const string &layer_name) {
+  shared_ptr<Layer<Dtype>> layer_ptr;
   if (has_layer(layer_name)) {
     layer_ptr = layers_[layer_names_index_[layer_name]];
   } else {
-    layer_ptr.reset((Layer<Dtype>*)(NULL));
+    layer_ptr.reset((Layer<Dtype> *)(NULL));
     LOG(WARNING) << "Unknown layer name " << layer_name;
   }
   return layer_ptr;
@@ -1066,4 +1098,4 @@ const shared_ptr<Layer<Dtype> > Net<Dtype>::layer_by_name(
 
 INSTANTIATE_CLASS(Net);
 
-}  // namespace caffe
+} // namespace caffe

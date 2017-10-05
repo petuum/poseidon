@@ -27,7 +27,7 @@ namespace petuum {
 
 class AbstractNumaMgrObj : boost::noncopyable {
 public:
-  AbstractNumaMgrObj() { }
+  AbstractNumaMgrObj() {}
 
   virtual void ConfigureBgWorker() = 0;
   virtual void ConfigureServerThread() = 0;
@@ -41,13 +41,13 @@ public:
     num_mem_nodes_ = numa_num_configured_nodes();
     LOG(INFO) << "num_cpus = " << num_cpus_
               << " num_mem_nodes = " << num_mem_nodes_;
- }
+  }
 
   void ConfigureBgWorker() {
     int32_t client_id = GlobalContext::get_client_id();
 
-    int32_t idx = ThreadContext::get_id() - GlobalContext::get_head_bg_id(
-        client_id);
+    int32_t idx =
+        ThreadContext::get_id() - GlobalContext::get_head_bg_id(client_id);
 
     int32_t node_id = idx % num_mem_nodes_;
     CHECK_EQ(numa_run_on_node(node_id), 0);
@@ -63,8 +63,8 @@ public:
 
   void ConfigureServerThread() {
     int32_t client_id = GlobalContext::get_client_id();
-    int32_t idx = ThreadContext::get_id() - GlobalContext::get_server_thread_id(
-        client_id, 0);
+    int32_t idx = ThreadContext::get_id() -
+                  GlobalContext::get_server_thread_id(client_id, 0);
 
     int32_t node_id = idx % num_mem_nodes_;
     CHECK_EQ(numa_run_on_node(node_id), 0);
@@ -79,7 +79,8 @@ public:
   }
 
   void ConfigureTableThread() {
-    int32_t idx = ThreadContext::get_id() - GlobalContext::get_head_table_thread_id();
+    int32_t idx =
+        ThreadContext::get_id() - GlobalContext::get_head_table_thread_id();
     int32_t node_id = idx % num_mem_nodes_;
     CHECK_EQ(numa_run_on_node(node_id), 0);
 
@@ -99,7 +100,7 @@ private:
 
 class CenterNumaObj : public AbstractNumaMgrObj {
 public:
-  CenterNumaObj() { }
+  CenterNumaObj() {}
 
   void ConfigureBgWorker() {
     int32_t node_id = GlobalContext::get_numa_index();
@@ -146,14 +147,14 @@ public:
       return;
 
     switch (GlobalContext::get_numa_policy()) {
-      case Even:
-        numa_obj_.reset(new EvenNumaObj);
-        break;
-      case Center:
-        numa_obj_.reset(new CenterNumaObj);
-        break;
-      default:
-        LOG(FATAL) << "Unknowkn numa policy";
+    case Even:
+      numa_obj_.reset(new EvenNumaObj);
+      break;
+    case Center:
+      numa_obj_.reset(new CenterNumaObj);
+      break;
+    default:
+      LOG(FATAL) << "Unknowkn numa policy";
     }
   }
 
@@ -176,7 +177,6 @@ private:
   static std::unique_ptr<AbstractNumaMgrObj> numa_obj_;
   static bool set_affinity_;
 };
-
 }
 
 #else
@@ -187,17 +187,16 @@ namespace petuum {
 
 class NumaMgr {
 public:
-  static void Init(bool set_affinity) { }
+  static void Init(bool set_affinity) {}
 
-  static void ConfigureBgWorker() { }
+  static void ConfigureBgWorker() {}
 
-  static void ConfigureServerThread() { }
+  static void ConfigureServerThread() {}
 
-  static void ConfigureTableThread() { }
+  static void ConfigureTableThread() {}
 
 private:
 };
-
 }
 
 #endif

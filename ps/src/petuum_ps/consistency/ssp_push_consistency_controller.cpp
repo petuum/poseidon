@@ -7,16 +7,14 @@
 namespace petuum {
 
 SSPPushConsistencyController::SSPPushConsistencyController(
-  const TableInfo& info,
-  int32_t table_id,
-  AbstractProcessStorage& process_storage,
-  AbstractOpLog& oplog,
-  const AbstractRow* sample_row,
-  boost::thread_specific_ptr<ThreadTable> &thread_cache,
-  TableOpLogIndex &oplog_index,
-  int32_t row_oplog_type) :
-  SSPConsistencyController(info, table_id, process_storage, oplog,
-                           sample_row, thread_cache, oplog_index, row_oplog_type) { }
+    const TableInfo &info, int32_t table_id,
+    AbstractProcessStorage &process_storage, AbstractOpLog &oplog,
+    const AbstractRow *sample_row,
+    boost::thread_specific_ptr<ThreadTable> &thread_cache,
+    TableOpLogIndex &oplog_index, int32_t row_oplog_type)
+    : SSPConsistencyController(info, table_id, process_storage, oplog,
+                               sample_row, thread_cache, oplog_index,
+                               row_oplog_type) {}
 
 void SSPPushConsistencyController::GetAsyncForced(int32_t row_id) {
   // Look for row_id in process_storage_.
@@ -61,15 +59,16 @@ void SSPPushConsistencyController::WaitPendingAsnycGet() {
   if (pending_async_get_cnt_.get() == 0)
     return;
 
-  while(*pending_async_get_cnt_ > 0) {
+  while (*pending_async_get_cnt_ > 0) {
     BgWorkers::GetAsyncRowRequestReply();
     *pending_async_get_cnt_ -= 1;
   }
 }
 
-ClientRow *SSPPushConsistencyController::Get(
-    int32_t row_id,
-    RowAccessor* row_accessor, int32_t clock) {
+ClientRow *SSPPushConsistencyController::Get(int32_t row_id,
+                                             RowAccessor *row_accessor,
+                                             int32_t clock) {
+
   STATS_APP_SAMPLE_SSP_GET_BEGIN(table_id_);
 
   // Look for row_id in process_storage_.
@@ -77,8 +76,8 @@ ClientRow *SSPPushConsistencyController::Get(
 
   int32_t system_clock = BgWorkers::GetSystemClock();
   if (system_clock < stalest_clock) {
-    //LOG(INFO) << "system_clock = " << system_clock
-    //        << " stalest_clock = " << stalest_clock;
+    VLOG(20) << "system_clock = " << system_clock
+             << " stalest_clock = " << stalest_clock;
     STATS_APP_ACCUM_SSPPUSH_GET_COMM_BLOCK_BEGIN(table_id_);
     BgWorkers::WaitSystemClock(stalest_clock);
     STATS_APP_ACCUM_SSPPUSH_GET_COMM_BLOCK_END(table_id_);
@@ -91,31 +90,11 @@ ClientRow *SSPPushConsistencyController::Get(
     STATS_APP_SAMPLE_SSP_GET_END(table_id_, true);
     return client_row;
   }
-
-  // Didn't find row_id that's fresh enough in process_storage_.
-  // Fetch from server.
-   int32_t num_fetches = 0;
-  do {
-    STATS_APP_ACCUM_SSP_GET_SERVER_FETCH_BEGIN(table_id_);
-    BgWorkers::RequestRow(table_id_, row_id, stalest_clock);
-    STATS_APP_ACCUM_SSP_GET_SERVER_FETCH_END(table_id_);
-
-    // fetch again
-    client_row = process_storage_.Find(row_id, row_accessor);
-    // TODO (jinliang):
-    // It's possible that the application thread does not find the row that
-    // the bg thread has just inserted. In practice, this shouldn't be an issue.
-    // We'll fix it if it turns out there are too many misses.
-    ++num_fetches;
-    CHECK_LE(num_fetches, 3); // to prevent infinite loop
-  }while(client_row == 0);
-
-  STATS_APP_SAMPLE_SSP_GET_END(table_id_, false);
-  return client_row;
+  LOG(FATAL) << "SSP Push consistency controller should not reach here.";
 }
 
-void SSPPushConsistencyController::ThreadGet(
-    int32_t row_id, ThreadRowAccessor* row_accessor) {
+void SSPPushConsistencyController::ThreadGet(int32_t row_id,
+                                             ThreadRowAccessor *row_accessor) {
   STATS_APP_SAMPLE_THREAD_GET_BEGIN(table_id_);
 
   // Look for row_id in process_storage_.
@@ -123,7 +102,7 @@ void SSPPushConsistencyController::ThreadGet(
 
   if (ThreadContext::GetCachedSystemClock() < stalest_clock) {
     int32_t system_clock = BgWorkers::GetSystemClock();
-    if(system_clock < stalest_clock) {
+    if (system_clock < stalest_clock) {
       STATS_APP_ACCUM_SSPPUSH_GET_COMM_BLOCK_BEGIN(table_id_);
       BgWorkers::WaitSystemClock(stalest_clock);
       STATS_APP_ACCUM_SSPPUSH_GET_COMM_BLOCK_END(table_id_);
@@ -152,11 +131,12 @@ void SSPPushConsistencyController::ThreadGet(
       client_row = process_storage_.Find(row_id, &process_row_accessor);
       // TODO (jinliang):
       // It's possible that the application thread does not find the row that
-      // the bg thread has just inserted. In practice, this shouldn't be an issue.
+      // the bg thread has just inserted. In practice, this shouldn't be an
+      // issue.
       // We'll fix it if it turns out there are too many misses.
       ++num_fetches;
       CHECK_LE(num_fetches, 3); // to prevent infinite loop
-    }while(client_row == 0);
+    } while (client_row == 0);
   }
   AbstractRow *tmp_row_data = client_row->GetRowDataPtr();
   thread_cache_->InsertRow(row_id, tmp_row_data);
@@ -166,4 +146,4 @@ void SSPPushConsistencyController::ThreadGet(
   STATS_APP_SAMPLE_THREAD_GET_END(table_id_);
 }
 
-}   // namespace petuum
+} // namespace petuum

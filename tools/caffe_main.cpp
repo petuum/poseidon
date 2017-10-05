@@ -9,8 +9,14 @@
 #include "caffe/caffe.hpp"
 #include "caffe/caffe_engine.hpp"
 #include "caffe/svb_worker.hpp"
+
+#ifdef USE_PS_THIN
+#include <petuum_ps/include/petuum_ps.hpp>
+#include <petuum_ps/include/system_gflags_declare.hpp>
+#else
 #include <petuum_ps_common/include/petuum_ps.hpp>
 #include <petuum_ps_common/include/system_gflags_declare.hpp>
+#endif
 
 using caffe::Blob;
 using caffe::Caffe;

@@ -51,10 +51,9 @@ protected:
   pthread_rwlock_t rw_lock_;
 };
 
-
 // Provide recursive lock with write lock counting. Note the function override
 // hides those in SharedMutex.
-class RecursiveSharedMutex: public SharedMutex {
+class RecursiveSharedMutex : public SharedMutex {
 public:
   RecursiveSharedMutex();
 
@@ -79,20 +78,16 @@ private:
   pthread_t writer_id;
 };
 
-
 class SpinMutex : public Lockable {
 public:
-  SpinMutex() {
-    lock_.clear();
-  }
+  SpinMutex() { lock_.clear(); }
 
   inline void lock() {
-    while (lock_.test_and_set(std::memory_order_acquire)) { }
+    while (lock_.test_and_set(std::memory_order_acquire)) {
+    }
   }
 
-  inline void unlock() {
-    lock_.clear(std::memory_order_release);
-  }
+  inline void unlock() { lock_.clear(std::memory_order_release); }
 
   inline bool try_lock() {
     return !lock_.test_and_set(std::memory_order_acquire);
@@ -102,36 +97,34 @@ private:
   std::atomic_flag lock_;
 } __attribute__((aligned(64)));
 
-
 // It takes an acquired lock and unlock it in destructor.
-template<typename MUTEX = std::mutex>
-class Unlocker : boost::noncopyable {
+template <typename MUTEX = std::mutex> class Unlocker : boost::noncopyable {
 public:
-  Unlocker() : lock_(0) { }
+  Unlocker() : lock_(0) {}
 
   ~Unlocker() {
-    if (lock_ != 0) lock_->unlock();
+    if (lock_ != 0)
+      lock_->unlock();
   }
 
   // lock must have been locked already. It does not take ownership.
-  inline void SetLock(MUTEX* lock) {
-    if (lock_ != 0) lock_->unlock();
+  inline void SetLock(MUTEX *lock) {
+    if (lock_ != 0)
+      lock_->unlock();
     lock_ = lock;
   }
 
   // Release the lock.
-  inline void Release() {
-    lock_ = 0;
-  }
+  inline void Release() { lock_ = 0; }
 
-  inline MUTEX* GetAndRelease() {
-    MUTEX* tmp_lock = lock_;
+  inline MUTEX *GetAndRelease() {
+    MUTEX *tmp_lock = lock_;
     lock_ = 0;
     return tmp_lock;
   }
 
 private:
-  MUTEX* lock_;
+  MUTEX *lock_;
 };
 
-}   // namespace petuum
+} // namespace petuum

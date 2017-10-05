@@ -6,8 +6,8 @@
 namespace petuum {
 class SSPPushBgWorkerGroup : public BgWorkerGroup {
 public:
-  SSPPushBgWorkerGroup(std::map<int32_t, ClientTable* > *tables);
-  ~SSPPushBgWorkerGroup() { }
+  SSPPushBgWorkerGroup(std::map<int32_t, ClientTable *> *tables);
+  ~SSPPushBgWorkerGroup() {}
 
   virtual int32_t GetSystemClock();
   virtual void WaitSystemClock(int32_t my_clock);
@@ -30,6 +30,5 @@ private:
 
   std::atomic_int_fast32_t system_clock_;
   VectorClockMT bg_server_clock_;
-
 };
 }

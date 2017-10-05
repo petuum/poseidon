@@ -14,30 +14,26 @@
 
 namespace petuum {
 
-class NameNodeThread : public Thread{
+class NameNodeThread : public Thread {
 public:
   NameNodeThread(pthread_barrier_t *init_barrier);
-  ~NameNodeThread() { }
+  ~NameNodeThread() {}
 
-  virtual void *operator() ();
+  virtual void *operator()();
 
-  virtual void ShutDown() {
-    Join();
-  }
+  virtual void ShutDown() { Join(); }
 
 private:
   struct CreateTableInfo {
     int32_t num_clients_replied_;
     int32_t num_servers_replied_;
     std::queue<int32_t> bgs_to_reply_;
-    CreateTableInfo():
-      num_clients_replied_(0),
-      num_servers_replied_(0),
-      bgs_to_reply_(){}
+    CreateTableInfo()
+        : num_clients_replied_(0), num_servers_replied_(0), bgs_to_reply_() {}
 
-    ~CreateTableInfo(){}
+    ~CreateTableInfo() {}
 
-    CreateTableInfo & operator= (const CreateTableInfo& info_obj){
+    CreateTableInfo &operator=(const CreateTableInfo &info_obj) {
       num_clients_replied_ = info_obj.num_clients_replied_;
       num_servers_replied_ = info_obj.num_servers_replied_;
       bgs_to_reply_ = info_obj.bgs_to_reply_;

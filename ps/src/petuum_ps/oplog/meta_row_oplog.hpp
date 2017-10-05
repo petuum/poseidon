@@ -12,92 +12,69 @@ namespace petuum {
 
 class MetaRowOpLog : public virtual AbstractRowOpLog {
 public:
-  MetaRowOpLog():
-      AbstractRowOpLog(0) { }
+  MetaRowOpLog() : AbstractRowOpLog(0) {}
 
-  ~MetaRowOpLog() { }
+  ~MetaRowOpLog() {}
 
-  void SetMeta(const RowOpLogMeta &other) {
-    meta_ = other;
-  }
+  void SetMeta(const RowOpLogMeta &other) { meta_ = other; }
 
-  RowOpLogMeta &GetMeta() {
-    return meta_;
-  }
+  RowOpLogMeta &GetMeta() { return meta_; }
 
-  void InvalidateMeta() {
-    meta_.invalidate_clock();
-  }
+  void InvalidateMeta() { meta_.invalidate_clock(); }
 
-  void ResetImportance() {
-    meta_.set_importance(0);
-  }
+  void ResetImportance() { meta_.set_importance(0); }
 
 private:
   RowOpLogMeta meta_;
-
 };
 
 class DenseMetaRowOpLog : public MetaRowOpLog, public DenseRowOpLog {
 public:
-  DenseMetaRowOpLog(
-      InitUpdateFunc InitUpdate,
-      CheckZeroUpdateFunc CheckZeroUpdate,
-      size_t update_size,
-      size_t row_size):
-      AbstractRowOpLog(update_size),
-      DenseRowOpLog(InitUpdate, CheckZeroUpdate,
-                    update_size, row_size) { }
-
+  DenseMetaRowOpLog(InitUpdateFunc InitUpdate,
+                    CheckZeroUpdateFunc CheckZeroUpdate, size_t update_size,
+                    size_t row_size)
+      : AbstractRowOpLog(update_size),
+        DenseRowOpLog(InitUpdate, CheckZeroUpdate, update_size, row_size) {}
 };
 
-class VersionDenseMetaRowOpLog : public MetaRowOpLog, public VersionDenseRowOpLog {
+class VersionDenseMetaRowOpLog : public MetaRowOpLog,
+                                 public VersionDenseRowOpLog {
 public:
-  VersionDenseMetaRowOpLog(
-      InitUpdateFunc InitUpdate,
-      CheckZeroUpdateFunc CheckZeroUpdate,
-      size_t update_size,
-      size_t row_size):
-      AbstractRowOpLog(update_size),
-      VersionDenseRowOpLog(InitUpdate, CheckZeroUpdate,
-                           update_size, row_size) { }
-
+  VersionDenseMetaRowOpLog(InitUpdateFunc InitUpdate,
+                           CheckZeroUpdateFunc CheckZeroUpdate,
+                           size_t update_size, size_t row_size)
+      : AbstractRowOpLog(update_size),
+        VersionDenseRowOpLog(InitUpdate, CheckZeroUpdate, update_size,
+                             row_size) {}
 };
 
 class SparseMetaRowOpLog : public MetaRowOpLog, public SparseRowOpLog {
 public:
-  SparseMetaRowOpLog(
-      InitUpdateFunc InitUpdate,
-      CheckZeroUpdateFunc CheckZeroUpdate,
-      size_t update_size):
-      AbstractRowOpLog(update_size),
-      SparseRowOpLog(
-          InitUpdate, CheckZeroUpdate, update_size) { }
+  SparseMetaRowOpLog(InitUpdateFunc InitUpdate,
+                     CheckZeroUpdateFunc CheckZeroUpdate, size_t update_size)
+      : AbstractRowOpLog(update_size),
+        SparseRowOpLog(InitUpdate, CheckZeroUpdate, update_size) {}
 };
 
 class SparseVectorMetaRowOpLog : public MetaRowOpLog,
                                  public SparseVectorRowOpLog {
 public:
-  SparseVectorMetaRowOpLog(
-      InitUpdateFunc InitUpdate,
-      CheckZeroUpdateFunc CheckZeroUpdate,
-      size_t update_size):
-      AbstractRowOpLog(update_size),
-      SparseVectorRowOpLog(
-          kOpLogRowInitCapacity,
-          InitUpdate, CheckZeroUpdate, update_size) { }
+  SparseVectorMetaRowOpLog(InitUpdateFunc InitUpdate,
+                           CheckZeroUpdateFunc CheckZeroUpdate,
+                           size_t update_size)
+      : AbstractRowOpLog(update_size),
+        SparseVectorRowOpLog(kOpLogRowInitCapacity, InitUpdate, CheckZeroUpdate,
+                             update_size) {}
 };
 
-class DenseMetaRowOpLogFloat16 : public MetaRowOpLog, public DenseRowOpLogFloat16 {
+class DenseMetaRowOpLogFloat16 : public MetaRowOpLog,
+                                 public DenseRowOpLogFloat16 {
 public:
-  DenseMetaRowOpLogFloat16(
-      InitUpdateFunc InitUpdate,
-      CheckZeroUpdateFunc CheckZeroUpdate,
-      size_t update_size,
-      size_t row_size):
-      AbstractRowOpLog(update_size),
-      DenseRowOpLogFloat16(InitUpdate, CheckZeroUpdate,
-                    update_size, row_size) { }
+  DenseMetaRowOpLogFloat16(InitUpdateFunc InitUpdate,
+                           CheckZeroUpdateFunc CheckZeroUpdate,
+                           size_t update_size, size_t row_size)
+      : AbstractRowOpLog(update_size),
+        DenseRowOpLogFloat16(InitUpdate, CheckZeroUpdate, update_size,
+                             row_size) {}
 };
-
 }

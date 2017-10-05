@@ -17,24 +17,16 @@
 
 namespace petuum {
 
-AbstractBgWorker::AbstractBgWorker(int32_t id,
-                   int32_t comm_channel_idx,
-                   std::map<int32_t, ClientTable* > *tables,
-                   pthread_barrier_t *init_barrier,
-                   pthread_barrier_t *create_table_barrier):
-    my_id_(id),
-    my_comm_channel_idx_(comm_channel_idx),
-    tables_(tables),
-    version_(0),
-    client_clock_(0),
-    clock_has_pushed_(-1),
-    comm_bus_(GlobalContext::comm_bus),
-    init_barrier_(init_barrier),
-    create_table_barrier_(create_table_barrier),
-    msg_tracker_(kMaxPendingMsgs),
-    pending_clock_send_oplog_(false),
-    clock_advanced_buffed_(false),
-    pending_shut_down_(false) {
+AbstractBgWorker::AbstractBgWorker(int32_t id, int32_t comm_channel_idx,
+                                   std::map<int32_t, ClientTable *> *tables,
+                                   pthread_barrier_t *init_barrier,
+                                   pthread_barrier_t *create_table_barrier)
+    : my_id_(id), my_comm_channel_idx_(comm_channel_idx), tables_(tables),
+      version_(0), client_clock_(0), clock_has_pushed_(-1),
+      comm_bus_(GlobalContext::comm_bus), init_barrier_(init_barrier),
+      create_table_barrier_(create_table_barrier),
+      msg_tracker_(kMaxPendingMsgs), pending_clock_send_oplog_(false),
+      clock_advanced_buffed_(false), pending_shut_down_(false) {
   GlobalContext::GetServerThreadIDs(my_comm_channel_idx_, &(server_ids_));
   for (const auto &server_id : server_ids_) {
     server_table_oplog_size_map_.insert(
@@ -50,9 +42,7 @@ AbstractBgWorker::~AbstractBgWorker() {
   }
 }
 
-void AbstractBgWorker::ShutDown() {
-  Join();
-}
+void AbstractBgWorker::ShutDown() { Join(); }
 
 void AbstractBgWorker::AppThreadRegister() {
   AppConnectMsg app_connect_msg;
@@ -64,20 +54,20 @@ void AbstractBgWorker::AppThreadRegister() {
 
 void AbstractBgWorker::AppThreadDeregister() {
   AppThreadDeregMsg msg;
-  size_t sent_size = SendMsg(reinterpret_cast<MsgBase*>(&msg));
+  size_t sent_size = SendMsg(reinterpret_cast<MsgBase *>(&msg));
   CHECK_EQ(sent_size, msg.get_size());
 }
 
 bool AbstractBgWorker::CreateTable(int32_t table_id,
-                                   const ClientTableConfig& table_config) {
+                                   const ClientTableConfig &table_config) {
   {
     BgCreateTableMsg bg_create_table_msg;
     bg_create_table_msg.get_table_id() = table_id;
     bg_create_table_msg.get_client_table_config() = table_config;
 
-    size_t sent_size = SendMsg(
-        reinterpret_cast<MsgBase*>(&bg_create_table_msg));
-    CHECK_EQ((int32_t) sent_size, bg_create_table_msg.get_size());
+    size_t sent_size =
+        SendMsg(reinterpret_cast<MsgBase *>(&bg_create_table_msg));
+    CHECK_EQ((int32_t)sent_size, bg_create_table_msg.get_size());
   }
   // waiting for response
   {
@@ -90,7 +80,8 @@ bool AbstractBgWorker::CreateTable(int32_t table_id,
   return true;
 }
 
-bool AbstractBgWorker::RequestRow(int32_t table_id, int32_t row_id, int32_t clock) {
+bool AbstractBgWorker::RequestRow(int32_t table_id, int32_t row_id,
+                                  int32_t clock) {
   {
     RowRequestMsg request_row_msg;
     request_row_msg.get_table_id() = table_id;
@@ -98,7 +89,7 @@ bool AbstractBgWorker::RequestRow(int32_t table_id, int32_t row_id, int32_t cloc
     request_row_msg.get_clock() = clock;
     request_row_msg.get_forced_request() = false;
 
-    size_t sent_size = SendMsg(reinterpret_cast<MsgBase*>(&request_row_msg));
+    size_t sent_size = SendMsg(reinterpret_cast<MsgBase *>(&request_row_msg));
     CHECK_EQ(sent_size, request_row_msg.get_size());
   }
 
@@ -121,7 +112,7 @@ void AbstractBgWorker::RequestRowAsync(int32_t table_id, int32_t row_id,
   request_row_msg.get_clock() = clock;
   request_row_msg.get_forced_request() = forced;
 
-  size_t sent_size = SendMsg(reinterpret_cast<MsgBase*>(&request_row_msg));
+  size_t sent_size = SendMsg(reinterpret_cast<MsgBase *>(&request_row_msg));
   CHECK_EQ(sent_size, request_row_msg.get_size());
 }
 
@@ -137,19 +128,20 @@ void AbstractBgWorker::SignalHandleAppendOnlyBuffer(int32_t table_id) {
   BgHandleAppendOpLogMsg handle_append_oplog_msg;
   handle_append_oplog_msg.get_table_id() = table_id;
 
-  size_t sent_size = SendMsg(reinterpret_cast<MsgBase*>(&handle_append_oplog_msg));
+  size_t sent_size =
+      SendMsg(reinterpret_cast<MsgBase *>(&handle_append_oplog_msg));
   CHECK_EQ(sent_size, handle_append_oplog_msg.get_size());
 }
 
 void AbstractBgWorker::ClockAllTables() {
   BgClockMsg bg_clock_msg;
-  size_t sent_size = SendMsg(reinterpret_cast<MsgBase*>(&bg_clock_msg));
+  size_t sent_size = SendMsg(reinterpret_cast<MsgBase *>(&bg_clock_msg));
   CHECK_EQ(sent_size, bg_clock_msg.get_size());
 }
 
 void AbstractBgWorker::SendOpLogsAllTables() {
   BgSendOpLogMsg bg_send_oplog_msg;
-  size_t sent_size = SendMsg(reinterpret_cast<MsgBase*>(&bg_send_oplog_msg));
+  size_t sent_size = SendMsg(reinterpret_cast<MsgBase *>(&bg_send_oplog_msg));
   CHECK_EQ(sent_size, bg_send_oplog_msg.get_size());
 }
 
@@ -159,39 +151,41 @@ void AbstractBgWorker::InitWhenStart() {
 }
 
 bool AbstractBgWorker::WaitMsgBusy(int32_t *sender_id, zmq::message_t *zmq_msg,
-                           long timeout_milli __attribute__ ((unused)) ) {
-  bool received = (GlobalContext::comm_bus->*
-                   (GlobalContext::comm_bus->RecvAsyncAny_))(sender_id,
-                                               zmq_msg);
+                                   long timeout_milli __attribute__((unused))) {
+  bool received =
+      (GlobalContext::comm_bus->*(GlobalContext::comm_bus->RecvAsyncAny_))(
+          sender_id, zmq_msg);
   while (!received)
-    received = (GlobalContext::comm_bus->*
-                (GlobalContext::comm_bus->RecvAsyncAny_))(sender_id,
-                                                          zmq_msg);
+    received =
+        (GlobalContext::comm_bus->*(GlobalContext::comm_bus->RecvAsyncAny_))(
+            sender_id, zmq_msg);
   return true;
 }
 
 bool AbstractBgWorker::WaitMsgSleep(int32_t *sender_id, zmq::message_t *zmq_msg,
-                            long timeout_milli __attribute__ ((unused)) ) {
-  (GlobalContext::comm_bus->*
-   (GlobalContext::comm_bus->RecvAny_))(sender_id, zmq_msg);
+                                    long timeout_milli
+                                    __attribute__((unused))) {
+  (GlobalContext::comm_bus->*(GlobalContext::comm_bus->RecvAny_))(sender_id,
+                                                                  zmq_msg);
   return true;
 }
 
-bool AbstractBgWorker::WaitMsgTimeOut(int32_t *sender_id, zmq::message_t *zmq_msg,
-                              long timeout_milli) {
-  bool received = (GlobalContext::comm_bus->*
-                   (GlobalContext::comm_bus->RecvTimeOutAny_))(
-                       sender_id, zmq_msg, timeout_milli);
+bool AbstractBgWorker::WaitMsgTimeOut(int32_t *sender_id,
+                                      zmq::message_t *zmq_msg,
+                                      long timeout_milli) {
+  bool received =
+      (GlobalContext::comm_bus->*(GlobalContext::comm_bus->RecvTimeOutAny_))(
+          sender_id, zmq_msg, timeout_milli);
   return received;
 }
 
-size_t AbstractBgWorker::GetDenseSerializedRowOpLogSize(
-    AbstractRowOpLog *row_oplog) {
+size_t
+AbstractBgWorker::GetDenseSerializedRowOpLogSize(AbstractRowOpLog *row_oplog) {
   return row_oplog->GetDenseSerializedSize();
 }
 
-size_t AbstractBgWorker::GetSparseSerializedRowOpLogSize(
-    AbstractRowOpLog *row_oplog) {
+size_t
+AbstractBgWorker::GetSparseSerializedRowOpLogSize(AbstractRowOpLog *row_oplog) {
   row_oplog->ClearZerosAndGetNoneZeroSize();
   return row_oplog->GetSparseSerializedSize();
 }
@@ -222,7 +216,7 @@ void AbstractBgWorker::BgServerHandshake() {
     int32_t sender_id;
     if (comm_bus_->IsLocalEntity(name_node_id)) {
       comm_bus_->RecvInProc(&sender_id, &zmq_msg);
-    }else{
+    } else {
       comm_bus_->RecvInterProc(&sender_id, &zmq_msg);
     }
     MsgType msg_type = MsgBase::get_msg_type(zmq_msg.data());
@@ -281,8 +275,9 @@ void AbstractBgWorker::HandleCreateTables() {
 
       // send msg to name node
       int32_t name_node_id = GlobalContext::get_name_node_id();
-      size_t sent_size = (comm_bus_->*(comm_bus_->SendAny_))(name_node_id,
-	create_table_msg.get_mem(), create_table_msg.get_size());
+      size_t sent_size = (comm_bus_->*(comm_bus_->SendAny_))(
+          name_node_id, create_table_msg.get_mem(),
+          create_table_msg.get_size());
       CHECK_EQ(sent_size, create_table_msg.get_size());
     }
 
@@ -299,15 +294,15 @@ void AbstractBgWorker::HandleCreateTables() {
 
       ClientTable *client_table;
       try {
-	client_table  = new ClientTable(table_id, client_table_config);
+        client_table = new ClientTable(table_id, client_table_config);
       } catch (std::bad_alloc &e) {
-	LOG(FATAL) << "Bad alloc exception";
+        LOG(FATAL) << "Bad alloc exception";
       }
       // not thread-safe
       (*tables_)[table_id] = client_table;
 
-      size_t sent_size = comm_bus_->SendInProc(sender_id, zmq_msg.data(),
-        zmq_msg.size());
+      size_t sent_size =
+          comm_bus_->SendInProc(sender_id, zmq_msg.data(), zmq_msg.size());
       CHECK_EQ(sent_size, zmq_msg.size());
     }
   }
@@ -342,30 +337,28 @@ long AbstractBgWorker::HandleClockMsg(bool clock_advanced) {
   return 0;
 }
 
-void AbstractBgWorker::HandleServerPushRow(int32_t sender_id, ServerPushRowMsg &server_push_row_msg) {
+void
+AbstractBgWorker::HandleServerPushRow(int32_t sender_id,
+                                      ServerPushRowMsg &server_push_row_msg) {
   LOG(FATAL) << "Consistency model = " << GlobalContext::get_consistency_model()
              << " does not support HandleServerPushRow";
 }
 
-void AbstractBgWorker::PrepareBeforeInfiniteLoop() { }
+void AbstractBgWorker::PrepareBeforeInfiniteLoop() {}
 
-void AbstractBgWorker::FinalizeTableStats() { }
+void AbstractBgWorker::FinalizeTableStats() {}
 
-long AbstractBgWorker::ResetBgIdleMilli() {
-  return 0;
-}
+long AbstractBgWorker::ResetBgIdleMilli() { return 0; }
 
-long AbstractBgWorker::BgIdleWork() {
-  return 0;
-}
+long AbstractBgWorker::BgIdleWork() { return 0; }
 
 void AbstractBgWorker::HandleAppendOpLogMsg(int32_t table_id) {
   STATS_BG_ACCUM_HANDLE_APPEND_OPLOG_BEGIN();
   auto table_iter = tables_->find(table_id);
   CHECK(table_iter != tables_->end());
 
-  AbstractAppendOnlyBuffer *buff
-      = table_iter->second->get_oplog().GetAppendOnlyBuffer(my_comm_channel_idx_);
+  AbstractAppendOnlyBuffer *buff =
+      table_iter->second->get_oplog().GetAppendOnlyBuffer(my_comm_channel_idx_);
 
   if (table_iter->second->get_bg_apply_append_oplog_freq() > 0) {
     HandleAppendOpLogAndApply(table_id, table_iter->second, buff);
@@ -379,18 +372,18 @@ void AbstractBgWorker::HandleAppendOpLogMsg(int32_t table_id) {
   STATS_BG_ACCUM_HANDLE_APPEND_OPLOG_END();
 }
 
-AppendOnlyRowOpLogBuffer *AbstractBgWorker::CreateAppendOnlyRowOpLogBufferIfNotExist(
-    int32_t table_id, ClientTable *table) {
+AppendOnlyRowOpLogBuffer *
+AbstractBgWorker::CreateAppendOnlyRowOpLogBufferIfNotExist(int32_t table_id,
+                                                           ClientTable *table) {
 
   auto buff_iter = append_only_row_oplog_buffer_map_.find(table_id);
   if (buff_iter == append_only_row_oplog_buffer_map_.end()) {
-    AppendOnlyRowOpLogBuffer *append_only_row_oplog_buffer
-        = new  AppendOnlyRowOpLogBuffer(
-            table->get_row_oplog_type(),
-            table->get_sample_row(),
-            table->get_sample_row()->get_update_size(),
-            table->get_dense_row_oplog_capacity(),
-            table->get_append_only_oplog_type());
+    AppendOnlyRowOpLogBuffer *append_only_row_oplog_buffer =
+        new AppendOnlyRowOpLogBuffer(table->get_row_oplog_type(),
+                                     table->get_sample_row(),
+                                     table->get_sample_row()->get_update_size(),
+                                     table->get_dense_row_oplog_capacity(),
+                                     table->get_append_only_oplog_type());
     append_only_row_oplog_buffer_map_.insert(
         std::make_pair(table_id, append_only_row_oplog_buffer));
     buff_iter = append_only_row_oplog_buffer_map_.find(table_id);
@@ -402,16 +395,16 @@ AppendOnlyRowOpLogBuffer *AbstractBgWorker::CreateAppendOnlyRowOpLogBufferIfNotE
 void AbstractBgWorker::HandleAppendOpLogAndApply(
     int32_t table_id, ClientTable *table, AbstractAppendOnlyBuffer *buff) {
 
-  AppendOnlyRowOpLogBuffer *append_only_row_oplog_buffer
-      = CreateAppendOnlyRowOpLogBufferIfNotExist(table_id, table);
+  AppendOnlyRowOpLogBuffer *append_only_row_oplog_buffer =
+      CreateAppendOnlyRowOpLogBufferIfNotExist(table_id, table);
   {
     int32_t row_id, num_updates;
     const int32_t *col_ids;
     buff->InitRead();
     const void *updates = buff->Next(&row_id, &col_ids, &num_updates);
     while (updates != 0) {
-      append_only_row_oplog_buffer->BatchIncTmp(row_id, col_ids,
-                                               updates, num_updates);
+      append_only_row_oplog_buffer->BatchIncTmp(row_id, col_ids, updates,
+                                                num_updates);
       updates = buff->Next(&row_id, &col_ids, &num_updates);
     }
   }
@@ -426,8 +419,8 @@ void AbstractBgWorker::HandleAppendOpLogAndApply(
   if (count_iter->second % table->get_bg_apply_append_oplog_freq() == 0) {
     AbstractProcessStorage &process_storage = table->get_process_storage();
     int32_t row_id;
-    AbstractRowOpLog *row_oplog
-        = append_only_row_oplog_buffer->InitReadTmpOpLog(&row_id);
+    AbstractRowOpLog *row_oplog =
+        append_only_row_oplog_buffer->InitReadTmpOpLog(&row_id);
     while (row_oplog != 0) {
       RowAccessor row_accessor;
       ClientRow *client_row = process_storage.Find(row_id, &row_accessor);
@@ -452,8 +445,8 @@ void AbstractBgWorker::HandleAppendOpLogAndApply(
 
 void AbstractBgWorker::HandleAppendOpLogAndNotApply(
     int32_t table_id, ClientTable *table, AbstractAppendOnlyBuffer *buff) {
-  AppendOnlyRowOpLogBuffer *append_only_row_oplog_buffer
-      = CreateAppendOnlyRowOpLogBufferIfNotExist(table_id, table);
+  AppendOnlyRowOpLogBuffer *append_only_row_oplog_buffer =
+      CreateAppendOnlyRowOpLogBufferIfNotExist(table_id, table);
 
   {
     int32_t row_id, num_updates;
@@ -461,18 +454,16 @@ void AbstractBgWorker::HandleAppendOpLogAndNotApply(
     buff->InitRead();
     const void *updates = buff->Next(&row_id, &col_ids, &num_updates);
     while (updates != 0) {
-      append_only_row_oplog_buffer->BatchInc(row_id, col_ids,
-                                             updates, num_updates);
+      append_only_row_oplog_buffer->BatchInc(row_id, col_ids, updates,
+                                             num_updates);
       updates = buff->Next(&row_id, &col_ids, &num_updates);
     }
   }
 }
 
 void AbstractBgWorker::FinalizeOpLogMsgStats(
-    int32_t table_id,
-    std::map<int32_t, size_t> *table_num_bytes_by_server,
-    std::map<int32_t, std::map<int32_t, size_t> >
-    *server_table_oplog_size_map) {
+    int32_t table_id, std::map<int32_t, size_t> *table_num_bytes_by_server,
+    std::map<int32_t, std::map<int32_t, size_t>> *server_table_oplog_size_map) {
   for (auto server_iter = (*table_num_bytes_by_server).begin();
        server_iter != (*table_num_bytes_by_server).end(); ++server_iter) {
     // 1. int32_t: number of rows
@@ -485,35 +476,34 @@ void AbstractBgWorker::FinalizeOpLogMsgStats(
     if (server_iter->second == 0)
       (*server_table_oplog_size_map)[server_iter->first].erase(table_id);
     else
-      (*server_table_oplog_size_map)[server_iter->first][table_id]
-          = server_iter->second;
+      (*server_table_oplog_size_map)[server_iter->first][table_id] =
+          server_iter->second;
   }
 }
 
 void AbstractBgWorker::CreateOpLogMsgs(const BgOpLog *bg_oplog) {
-  std::map<int32_t, std::map<int32_t, void*> > table_server_mem_map;
+  std::map<int32_t, std::map<int32_t, void *>> table_server_mem_map;
 
   for (auto server_iter = server_table_oplog_size_map_.begin();
-    server_iter != server_table_oplog_size_map_.end(); server_iter++) {
+       server_iter != server_table_oplog_size_map_.end(); server_iter++) {
     OpLogSerializer oplog_serializer;
     int32_t server_id = server_iter->first;
-    size_t server_oplog_msg_size
-        = oplog_serializer.Init(server_iter->second);
+    size_t server_oplog_msg_size = oplog_serializer.Init(server_iter->second);
 
     if (server_oplog_msg_size == 0) {
-        server_oplog_msg_map_.erase(server_id);
+      server_oplog_msg_map_.erase(server_id);
       continue;
     }
 
-    server_oplog_msg_map_[server_id]
-      = new ClientSendOpLogMsg(server_oplog_msg_size);
+    server_oplog_msg_map_[server_id] =
+        new ClientSendOpLogMsg(server_oplog_msg_size);
 
     oplog_serializer.AssignMem(server_oplog_msg_map_[server_id]->get_data());
 
     for (const auto &table_pair : (*tables_)) {
       int32_t table_id = table_pair.first;
-      uint8_t *table_ptr
-	= reinterpret_cast<uint8_t*>(oplog_serializer.GetTablePtr(table_id));
+      uint8_t *table_ptr =
+          reinterpret_cast<uint8_t *>(oplog_serializer.GetTablePtr(table_id));
 
       if (table_ptr == 0) {
         table_server_mem_map[table_id].erase(server_id);
@@ -521,15 +511,15 @@ void AbstractBgWorker::CreateOpLogMsgs(const BgOpLog *bg_oplog) {
       }
 
       // table id
-      *(reinterpret_cast<int32_t*>(table_ptr)) = table_id;
+      *(reinterpret_cast<int32_t *>(table_ptr)) = table_id;
 
       // table update size
-      *(reinterpret_cast<size_t*>(table_ptr + sizeof(int32_t)))
-	= table_pair.second->get_sample_row()->get_update_size();
+      *(reinterpret_cast<size_t *>(table_ptr + sizeof(int32_t))) =
+          table_pair.second->get_sample_row()->get_update_size();
 
       // offset for table rows
-      table_server_mem_map[table_id][server_id]
-        = table_ptr + sizeof(int32_t) + sizeof(size_t);
+      table_server_mem_map[table_id][server_id] =
+          table_ptr + sizeof(int32_t) + sizeof(size_t);
     }
   }
 
@@ -541,7 +531,8 @@ void AbstractBgWorker::CreateOpLogMsgs(const BgOpLog *bg_oplog) {
       CHECK(serializer_iter != row_oplog_serializer_map_.end());
 
       RowOpLogSerializer *row_oplog_serializer = serializer_iter->second;
-      row_oplog_serializer->SerializeByServer(&(table_server_mem_map[table_id]));
+      row_oplog_serializer->SerializeByServer(
+          &(table_server_mem_map[table_id]));
     } else {
       BgOpLogPartition *oplog_partition = bg_oplog->Get(table_id);
       oplog_partition->SerializeByServer(
@@ -559,12 +550,13 @@ size_t AbstractBgWorker::SendOpLogMsgs(bool clock_advanced) {
       oplog_msg_iter->second->get_is_clock() = clock_advanced;
       oplog_msg_iter->second->get_client_id() = GlobalContext::get_client_id();
       oplog_msg_iter->second->get_version() = version_;
-      oplog_msg_iter->second->get_bg_clock()
-          = clock_advanced ? (clock_has_pushed_ + 1) : (client_clock_ - 1);
+      oplog_msg_iter->second->get_bg_clock() =
+          clock_advanced ? (clock_has_pushed_ + 1) : (client_clock_ - 1);
       oplog_msg_iter->second->get_seq_num() = msg_tracker_.IncGetSeq(server_id);
 
       accum_size += oplog_msg_iter->second->get_size();
-      //LOG(INFO) << "send " << server_id << " " << oplog_msg_iter->second->get_seq_num();
+      // LOG(INFO) << "send " << server_id << " " <<
+      // oplog_msg_iter->second->get_seq_num();
       MemTransfer::TransferMem(comm_bus_, server_id, oplog_msg_iter->second);
       // delete message after send
       delete oplog_msg_iter->second;
@@ -580,7 +572,8 @@ size_t AbstractBgWorker::SendOpLogMsgs(bool clock_advanced) {
 
       accum_size += clock_oplog_msg.get_size();
 
-      //LOG(INFO) << "send " << server_id << " " << clock_oplog_msg.get_seq_num();
+      // LOG(INFO) << "send " << server_id << " " <<
+      // clock_oplog_msg.get_seq_num();
 
       MemTransfer::TransferMem(comm_bus_, server_id, &clock_oplog_msg);
     }
@@ -592,24 +585,25 @@ size_t AbstractBgWorker::SendOpLogMsgs(bool clock_advanced) {
 }
 
 size_t AbstractBgWorker::CountRowOpLogToSend(
-      int32_t row_id, AbstractRowOpLog *row_oplog,
-      std::map<int32_t, size_t> *table_num_bytes_by_server,
-      BgOpLogPartition *bg_table_oplog,
-      GetSerializedRowOpLogSizeFunc GetSerializedRowOpLogSize) {
+    int32_t row_id, AbstractRowOpLog *row_oplog,
+    std::map<int32_t, size_t> *table_num_bytes_by_server,
+    BgOpLogPartition *bg_table_oplog,
+    GetSerializedRowOpLogSizeFunc GetSerializedRowOpLogSize) {
 
   // update oplog message size
-  int32_t server_id = GlobalContext::GetPartitionServerID(
-      row_id, my_comm_channel_idx_);
+  int32_t server_id =
+      GlobalContext::GetPartitionServerID(row_id, my_comm_channel_idx_);
   // 1) row id
   // 2) serialized row size
-  size_t serialized_size = sizeof(int32_t)
-                           + GetSerializedRowOpLogSize(row_oplog);
+  size_t serialized_size =
+      sizeof(int32_t) + GetSerializedRowOpLogSize(row_oplog);
   (*table_num_bytes_by_server)[server_id] += serialized_size;
   bg_table_oplog->InsertOpLog(row_id, row_oplog);
   return serialized_size;
 }
 
-void AbstractBgWorker::RecvAppInitThreadConnection(int32_t *num_connected_app_threads) {
+void AbstractBgWorker::RecvAppInitThreadConnection(
+    int32_t *num_connected_app_threads) {
   zmq::message_t zmq_msg;
   int32_t sender_id;
   comm_bus_->RecvInProc(&sender_id, &zmq_msg);
@@ -638,10 +632,10 @@ void AbstractBgWorker::CheckForwardRowRequestToServer(
       RowAccessor row_accessor;
       ClientRow *client_row = table_storage.Find(row_id, &row_accessor);
       if (client_row != 0) {
-        if ((GlobalContext::get_consistency_model() == SSP
-             && client_row->GetClock() >= clock)
-            || (GlobalContext::get_consistency_model() == SSPPush)
-            || (GlobalContext::get_consistency_model() == SSPAggr)) {
+        if ((GlobalContext::get_consistency_model() == SSP &&
+             client_row->GetClock() >= clock) ||
+            (GlobalContext::get_consistency_model() == SSPPush) ||
+            (GlobalContext::get_consistency_model() == SSPAggr)) {
           RowRequestReplyMsg row_request_reply_msg;
           size_t sent_size = comm_bus_->SendInProc(
               app_thread_id, row_request_reply_msg.get_mem(),
@@ -662,27 +656,26 @@ void AbstractBgWorker::CheckForwardRowRequestToServer(
   // see. Which should be 1 less than the current version number.
   row_request.version = version_ - 1;
 
-  bool should_be_sent
-    = row_request_oplog_mgr_->AddRowRequest(row_request, table_id, row_id);
+  bool should_be_sent =
+      row_request_oplog_mgr_->AddRowRequest(row_request, table_id, row_id);
 
   if (should_be_sent) {
-    int32_t server_id
-        = GlobalContext::GetPartitionServerID(row_id, my_comm_channel_idx_);
+    int32_t server_id =
+        GlobalContext::GetPartitionServerID(row_id, my_comm_channel_idx_);
 
-    size_t sent_size = (comm_bus_->*(comm_bus_->SendAny_))(server_id,
-      row_request_msg.get_mem(), row_request_msg.get_size());
+    size_t sent_size = (comm_bus_->*(comm_bus_->SendAny_))(
+        server_id, row_request_msg.get_mem(), row_request_msg.get_size());
     CHECK_EQ(sent_size, row_request_msg.get_size());
   }
 }
 
 void AbstractBgWorker::UpdateExistingRow(
-    int32_t table_id,
-    int32_t row_id, ClientRow *client_row, ClientTable *client_table,
-    const void *data, size_t row_size, uint32_t version,
-    bool version_maintain, uint64_t row_version) {
+    int32_t table_id, int32_t row_id, ClientRow *client_row,
+    ClientTable *client_table, const void *data, size_t row_size,
+    uint32_t version, bool version_maintain, uint64_t row_version) {
   AbstractRow *row_data = client_row->GetRowDataPtr();
-  if (client_table->get_oplog_type() == Sparse
-      || client_table->get_oplog_type() == Dense) {
+  if (client_table->get_oplog_type() == Sparse ||
+      client_table->get_oplog_type() == Dense) {
     AbstractOpLog &table_oplog = client_table->get_oplog();
     OpLogAccessor oplog_accessor;
     bool oplog_found = table_oplog.FindAndLock(row_id, &oplog_accessor);
@@ -708,15 +701,14 @@ void AbstractBgWorker::UpdateExistingRow(
     }
 
     if (oplog_found && version_maintain) {
-      //LOG(INFO) << __func__ << " id = " << row_id;
-      CHECK(no_oplog_replay) << "table = " << table_id
-                             << " row = " << row_id;
-      RowOpLogSerializer *row_oplog_serializer = FindAndCreateRowOpLogSerializer(
-          table_id, client_table);
+      // LOG(INFO) << __func__ << " id = " << row_id;
+      CHECK(no_oplog_replay) << "table = " << table_id << " row = " << row_id;
+      RowOpLogSerializer *row_oplog_serializer =
+          FindAndCreateRowOpLogSerializer(table_id, client_table);
       AbstractRowOpLog *row_oplog = oplog_accessor.get_row_oplog();
       // todo: why reinterpret_cast fails?
-      VersionDenseRowOpLog *version_dense_row_oplog
-          = dynamic_cast<VersionDenseRowOpLog*>(row_oplog);
+      VersionDenseRowOpLog *version_dense_row_oplog =
+          dynamic_cast<VersionDenseRowOpLog *>(row_oplog);
       version_dense_row_oplog->SetEndOfVersion(true);
       row_oplog_serializer->AppendRowOpLog(row_id, row_oplog);
       STATS_BG_ACCUM_TABLE_OPLOG_SENT(table_id, row_id, 1);
@@ -731,10 +723,11 @@ void AbstractBgWorker::UpdateExistingRow(
     row_data->ResetRowData(data, row_size);
     auto buff_iter = append_only_row_oplog_buffer_map_.find(table_id);
     if (buff_iter != append_only_row_oplog_buffer_map_.end()) {
-      AppendOnlyRowOpLogBuffer *append_only_row_oplog_buffer = buff_iter->second;
+      AppendOnlyRowOpLogBuffer *append_only_row_oplog_buffer =
+          buff_iter->second;
 
-      AbstractRowOpLog *row_oplog
-          = append_only_row_oplog_buffer->GetRowOpLog(row_id);
+      AbstractRowOpLog *row_oplog =
+          append_only_row_oplog_buffer->GetRowOpLog(row_id);
 
       if (row_oplog != 0) {
         int32_t column_id;
@@ -753,12 +746,12 @@ void AbstractBgWorker::UpdateExistingRow(
 }
 
 void AbstractBgWorker::InsertNonexistentRow(int32_t table_id, int32_t row_id,
-                                            ClientTable *client_table, const void *data,
-                                            size_t row_size, uint32_t version,
-                                            int32_t clock) {
+                                            ClientTable *client_table,
+                                            const void *data, size_t row_size,
+                                            uint32_t version, int32_t clock) {
   int32_t row_type = client_table->get_row_type();
-  AbstractRow *row_data
-      = ClassRegistry<AbstractRow>::GetRegistry().CreateObject(row_type);
+  AbstractRow *row_data =
+      ClassRegistry<AbstractRow>::GetRegistry().CreateObject(row_type);
 
   row_data->Deserialize(data, row_size);
 
@@ -783,13 +776,14 @@ void AbstractBgWorker::InsertNonexistentRow(int32_t table_id, int32_t row_id,
       }
     }
     client_table->get_process_storage().Insert(row_id, client_row);
-  } else if (client_table->get_oplog_type() == AppendOnly) { //AppendOnly
+  } else if (client_table->get_oplog_type() == AppendOnly) { // AppendOnly
     auto buff_iter = append_only_row_oplog_buffer_map_.find(table_id);
     if (buff_iter != append_only_row_oplog_buffer_map_.end()) {
-      AppendOnlyRowOpLogBuffer *append_only_row_oplog_buffer = buff_iter->second;
+      AppendOnlyRowOpLogBuffer *append_only_row_oplog_buffer =
+          buff_iter->second;
 
-      AbstractRowOpLog *row_oplog
-          = append_only_row_oplog_buffer->GetRowOpLog(row_id);
+      AbstractRowOpLog *row_oplog =
+          append_only_row_oplog_buffer->GetRowOpLog(row_id);
 
       if (row_oplog != 0) {
         int32_t column_id;
@@ -808,8 +802,7 @@ void AbstractBgWorker::InsertNonexistentRow(int32_t table_id, int32_t row_id,
 }
 
 void AbstractBgWorker::HandleServerRowRequestReply(
-    int32_t server_id,
-    ServerRowRequestReplyMsg &server_row_request_reply_msg) {
+    int32_t server_id, ServerRowRequestReplyMsg &server_row_request_reply_msg) {
 
   int32_t table_id = server_row_request_reply_msg.get_table_id();
   int32_t row_id = server_row_request_reply_msg.get_row_id();
@@ -823,8 +816,8 @@ void AbstractBgWorker::HandleServerRowRequestReply(
   row_request_oplog_mgr_->ServerAcknowledgeVersion(server_id, version);
 
   RowAccessor row_accessor;
-  ClientRow *client_row = client_table->get_process_storage().Find(
-      row_id, &row_accessor);
+  ClientRow *client_row =
+      client_table->get_process_storage().Find(row_id, &row_accessor);
 
   const void *data = server_row_request_reply_msg.get_row_data();
   size_t row_size = server_row_request_reply_msg.get_row_size();
@@ -839,13 +832,13 @@ void AbstractBgWorker::HandleServerRowRequestReply(
                       row_size, version, table_version_maintain, row_version);
     client_row->SetClock(clock);
   } else { // not found
-    InsertNonexistentRow(table_id, row_id, client_table, data, row_size, version, clock);
+    InsertNonexistentRow(table_id, row_id, client_table, data, row_size,
+                         version, clock);
   }
 
   std::vector<int32_t> app_thread_ids;
-  int32_t clock_to_request
-    = row_request_oplog_mgr_->InformReply(
-        table_id, row_id, clock, version_, &app_thread_ids);
+  int32_t clock_to_request = row_request_oplog_mgr_->InformReply(
+      table_id, row_id, clock, version_, &app_thread_ids);
 
   if (clock_to_request >= 0) {
     RowRequestMsg row_request_msg;
@@ -853,27 +846,28 @@ void AbstractBgWorker::HandleServerRowRequestReply(
     row_request_msg.get_row_id() = row_id;
     row_request_msg.get_clock() = clock_to_request;
 
-    int32_t server_id = GlobalContext::GetPartitionServerID(
-        row_id, my_comm_channel_idx_);
+    int32_t server_id =
+        GlobalContext::GetPartitionServerID(row_id, my_comm_channel_idx_);
 
-    size_t sent_size = (comm_bus_->*(comm_bus_->SendAny_))(server_id,
-      row_request_msg.get_mem(), row_request_msg.get_size());
+    size_t sent_size = (comm_bus_->*(comm_bus_->SendAny_))(
+        server_id, row_request_msg.get_mem(), row_request_msg.get_size());
     CHECK_EQ(sent_size, row_request_msg.get_size());
   }
 
   std::pair<int32_t, int32_t> request_key(table_id, row_id);
   RowRequestReplyMsg row_request_reply_msg;
 
-  for (int i = 0; i < (int) app_thread_ids.size(); ++i) {
+  for (int i = 0; i < (int)app_thread_ids.size(); ++i) {
     size_t sent_size = comm_bus_->SendInProc(app_thread_ids[i],
-      row_request_reply_msg.get_mem(), row_request_reply_msg.get_size());
+                                             row_request_reply_msg.get_mem(),
+                                             row_request_reply_msg.get_size());
     CHECK_EQ(sent_size, row_request_reply_msg.get_size());
   }
 }
 
 size_t AbstractBgWorker::SendMsg(MsgBase *msg) {
-  size_t sent_size = comm_bus_->SendInProc(my_id_, msg->get_mem(),
-                                            msg->get_size());
+  size_t sent_size =
+      comm_bus_->SendInProc(my_id_, msg->get_mem(), msg->get_size());
   return sent_size;
 }
 
@@ -904,19 +898,19 @@ void AbstractBgWorker::ConnectToNameNodeOrServer(int32_t server_id) {
 
 void AbstractBgWorker::TurnOnEarlyComm() {
   BgEarlyCommOnMsg msg;
-  size_t sent_size = SendMsg(reinterpret_cast<MsgBase*>(&msg));
+  size_t sent_size = SendMsg(reinterpret_cast<MsgBase *>(&msg));
   CHECK_EQ(sent_size, msg.get_size());
 }
 
 void AbstractBgWorker::TurnOffEarlyComm() {
   BgEarlyCommOffMsg msg;
-  size_t sent_size = SendMsg(reinterpret_cast<MsgBase*>(&msg));
+  size_t sent_size = SendMsg(reinterpret_cast<MsgBase *>(&msg));
   CHECK_EQ(sent_size, msg.get_size());
 }
 
-void AbstractBgWorker::HandleEarlyCommOn() { }
+void AbstractBgWorker::HandleEarlyCommOn() {}
 
-void AbstractBgWorker::HandleEarlyCommOff() { }
+void AbstractBgWorker::HandleEarlyCommOff() {}
 
 void AbstractBgWorker::SendClientShutDownMsgs() {
   ClientShutDownMsg msg;
@@ -930,37 +924,38 @@ void AbstractBgWorker::SendClientShutDownMsgs() {
   }
 }
 
-void AbstractBgWorker::HandleAdjustSuppressionLevel() { }
+void AbstractBgWorker::HandleAdjustSuppressionLevel() {}
 
 uint64_t AbstractBgWorker::ExtractRowVersion(const void *bytes,
                                              size_t *num_bytes) {
   CHECK(*num_bytes > sizeof(uint64_t));
   *num_bytes -= sizeof(uint64_t);
-  return *(reinterpret_cast<const uint64_t*>(
-      reinterpret_cast<const uint8_t*>(bytes) + *num_bytes));
+  return *(reinterpret_cast<const uint64_t *>(
+      reinterpret_cast<const uint8_t *>(bytes) + *num_bytes));
 }
 
-RowOpLogSerializer *AbstractBgWorker::FindAndCreateRowOpLogSerializer(
-    int32_t table_id, ClientTable *table) {
+RowOpLogSerializer *
+AbstractBgWorker::FindAndCreateRowOpLogSerializer(int32_t table_id,
+                                                  ClientTable *table) {
   auto serializer_iter = row_oplog_serializer_map_.find(table_id);
 
   if (serializer_iter == row_oplog_serializer_map_.end()) {
-    RowOpLogSerializer *row_oplog_serializer
-        = new RowOpLogSerializer(table->oplog_dense_serialized(),
-                                 my_comm_channel_idx_);
-    row_oplog_serializer_map_.insert(std::make_pair(table_id, row_oplog_serializer));
+    RowOpLogSerializer *row_oplog_serializer = new RowOpLogSerializer(
+        table->oplog_dense_serialized(), my_comm_channel_idx_);
+    row_oplog_serializer_map_.insert(
+        std::make_pair(table_id, row_oplog_serializer));
     serializer_iter = row_oplog_serializer_map_.find(table_id);
   }
 
   return serializer_iter->second;
 }
 
-void *AbstractBgWorker::operator() () {
+void *AbstractBgWorker::operator()() {
   STATS_REGISTER_THREAD(kBgThread);
 
   ThreadContext::RegisterThread(my_id_);
 
-  //NumaMgr::ConfigureBgWorker();
+  // NumaMgr::ConfigureBgWorker();
 
   InitCommBus();
 
@@ -974,7 +969,7 @@ void *AbstractBgWorker::operator() () {
 
   RecvAppInitThreadConnection(&num_connected_app_threads);
 
-  if(my_comm_channel_idx_ == 0){
+  if (my_comm_channel_idx_ == 0) {
     HandleCreateTables();
   }
   pthread_barrier_wait(create_table_barrier_);
@@ -991,7 +986,7 @@ void *AbstractBgWorker::operator() () {
   while (1) {
     // LOG(INFO) << "timeout_milli = " << timeout_milli;
     bool received = WaitMsg_(&sender_id, &zmq_msg, timeout_milli);
-    //LOG(INFO) << "received = " << received;
+    // LOG(INFO) << "received = " << received;
 
     if (!received) {
       timeout_milli = BgIdleWork();
@@ -1013,125 +1008,94 @@ void *AbstractBgWorker::operator() () {
     }
 
     switch (msg_type) {
-      case kAppConnect:
-        {
-          ++num_connected_app_threads;
+    case kAppConnect: {
+      ++num_connected_app_threads;
 
-          CHECK(num_connected_app_threads
-                <= GlobalContext::get_num_app_threads())
-              << "num_connected_app_threads = " << num_connected_app_threads
-              << " get_num_app_threads() = "
-              << GlobalContext::get_num_app_threads();
-        }
-        break;
-      case kAppThreadDereg:
-        {
-          ++num_deregistered_app_threads;
-          if (num_deregistered_app_threads
-              == GlobalContext::get_num_app_threads()) {
+      CHECK(num_connected_app_threads <= GlobalContext::get_num_app_threads())
+          << "num_connected_app_threads = " << num_connected_app_threads
+          << " get_num_app_threads() = "
+          << GlobalContext::get_num_app_threads();
+    } break;
+    case kAppThreadDereg: {
+      ++num_deregistered_app_threads;
+      if (num_deregistered_app_threads ==
+          GlobalContext::get_num_app_threads()) {
 
-            if (pending_clock_send_oplog_
-                || msg_tracker_.PendingAcks()) {
-              pending_shut_down_ = true;
-              break;
-            }
+        if (pending_clock_send_oplog_ || msg_tracker_.PendingAcks()) {
+          pending_shut_down_ = true;
+          break;
+        }
 
-            SendClientShutDownMsgs();
-          }
-        }
-        break;
-      case kServerShutDownAck:
-        {
-          ++num_shutdown_acked_servers;
-          if (num_shutdown_acked_servers
-              == GlobalContext::get_num_clients() + 1) {
-	    comm_bus_->ThreadDeregister();
-            STATS_DEREGISTER_THREAD();
-	    return 0;
-          }
-        }
-      break;
-      case kRowRequest:
-        {
-          RowRequestMsg row_request_msg(msg_mem);
-          CheckForwardRowRequestToServer(sender_id, row_request_msg);
-        }
-        break;
-      case kServerRowRequestReply:
-        {
-          ServerRowRequestReplyMsg server_row_request_reply_msg(msg_mem);
-          HandleServerRowRequestReply(sender_id, server_row_request_reply_msg);
-        }
-        break;
-      case kBgClock:
-        {
-          //LOG(INFO) << "bg_recv_clock = " << (client_clock_ + 1)
-          //        << " " << my_id_;
-          client_clock_ += 1;
-          timeout_milli = HandleClockMsg(true);
-          //LOG(INFO) << "HandleClockMsg done, timeout_milli = " << timeout_milli;
-          //LOG(INFO) << client_clock_ << " " << my_id_;
-          //LOG(INFO) << "bg_sent_oplog = " << client_clock_
-          //        << " " << my_id_;
+        SendClientShutDownMsgs();
+      }
+    } break;
+    case kServerShutDownAck: {
+      ++num_shutdown_acked_servers;
+      if (num_shutdown_acked_servers == GlobalContext::get_num_clients() + 1) {
+        comm_bus_->ThreadDeregister();
+        STATS_DEREGISTER_THREAD();
+        return 0;
+      }
+    } break;
+    case kRowRequest: {
+      RowRequestMsg row_request_msg(msg_mem);
+      CheckForwardRowRequestToServer(sender_id, row_request_msg);
+    } break;
+    case kServerRowRequestReply: {
+      ServerRowRequestReplyMsg server_row_request_reply_msg(msg_mem);
+      HandleServerRowRequestReply(sender_id, server_row_request_reply_msg);
+    } break;
+    case kBgClock: {
+      // LOG(INFO) << "bg_recv_clock = " << (client_clock_ + 1)
+      //        << " " << my_id_;
+      client_clock_ += 1;
+      timeout_milli = HandleClockMsg(true);
+      // LOG(INFO) << "HandleClockMsg done, timeout_milli = " << timeout_milli;
+      // LOG(INFO) << client_clock_ << " " << my_id_;
+      // LOG(INFO) << "bg_sent_oplog = " << client_clock_
+      //        << " " << my_id_;
 
-          STATS_BG_CLOCK();
-        }
-        break;
-      case kBgSendOpLog:
-        {
-          timeout_milli = HandleClockMsg(false);
-        }
-        break;
-      case kServerPushRow:
-        {
-          ServerPushRowMsg server_push_row_msg(msg_mem);
-          HandleServerPushRow(sender_id, server_push_row_msg);
-        }
-        break;
-      case kServerOpLogAck:
-        {
-          ServerOpLogAckMsg server_oplog_ack_msg(msg_mem);
-          row_request_oplog_mgr_->ServerAcknowledgeVersion(
-              sender_id, server_oplog_ack_msg.get_ack_version());
-          uint64_t ack = server_oplog_ack_msg.get_ack_num();
-          msg_tracker_.RecvAck(sender_id, ack);
-          if (pending_clock_send_oplog_
-              && msg_tracker_.CheckSendAll()) {
-            pending_clock_send_oplog_ = false;
-            HandleClockMsg(clock_advanced_buffed_);
-          }
+      STATS_BG_CLOCK();
+    } break;
+    case kBgSendOpLog: {
+      timeout_milli = HandleClockMsg(false);
+    } break;
+    case kServerPushRow: {
+      ServerPushRowMsg server_push_row_msg(msg_mem);
+      HandleServerPushRow(sender_id, server_push_row_msg);
+    } break;
+    case kServerOpLogAck: {
+      ServerOpLogAckMsg server_oplog_ack_msg(msg_mem);
+      row_request_oplog_mgr_->ServerAcknowledgeVersion(
+          sender_id, server_oplog_ack_msg.get_ack_version());
+      uint64_t ack = server_oplog_ack_msg.get_ack_num();
+      msg_tracker_.RecvAck(sender_id, ack);
+      if (pending_clock_send_oplog_ && msg_tracker_.CheckSendAll()) {
+        pending_clock_send_oplog_ = false;
+        HandleClockMsg(clock_advanced_buffed_);
+      }
 
-          if (!pending_clock_send_oplog_
-              && !msg_tracker_.PendingAcks()
-              && pending_shut_down_) {
-            pending_shut_down_ = false;
-            SendClientShutDownMsgs();
-          }
-        }
-        break;
-      case kBgHandleAppendOpLog:
-        {
-          BgHandleAppendOpLogMsg handle_append_oplog_msg(msg_mem);
-          HandleAppendOpLogMsg(handle_append_oplog_msg.get_table_id());
-        }
-        break;
-      case kBgEarlyCommOn:
-        {
-          HandleEarlyCommOn();
-        }
-        break;
-      case kBgEarlyCommOff:
-        {
-          HandleEarlyCommOff();
-        }
-        break;
-      case kAdjustSuppressionLevel:
-        {
-          HandleAdjustSuppressionLevel();
-        }
-        break;
-      default:
-        LOG(FATAL) << "Unrecognized type " << msg_type;
+      if (!pending_clock_send_oplog_ && !msg_tracker_.PendingAcks() &&
+          pending_shut_down_) {
+        pending_shut_down_ = false;
+        SendClientShutDownMsgs();
+      }
+    } break;
+    case kBgHandleAppendOpLog: {
+      BgHandleAppendOpLogMsg handle_append_oplog_msg(msg_mem);
+      HandleAppendOpLogMsg(handle_append_oplog_msg.get_table_id());
+    } break;
+    case kBgEarlyCommOn: {
+      HandleEarlyCommOn();
+    } break;
+    case kBgEarlyCommOff: {
+      HandleEarlyCommOff();
+    } break;
+    case kAdjustSuppressionLevel: {
+      HandleAdjustSuppressionLevel();
+    } break;
+    default:
+      LOG(FATAL) << "Unrecognized type " << msg_type;
     }
 
     if (destroy_mem)
@@ -1140,5 +1104,4 @@ void *AbstractBgWorker::operator() () {
 
   return 0;
 }
-
 }

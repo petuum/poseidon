@@ -21,12 +21,12 @@ namespace petuum {
 
 class AbstractTableGroup {
 public:
-  AbstractTableGroup() { }
+  AbstractTableGroup() {}
 
-  virtual ~AbstractTableGroup() { }
+  virtual ~AbstractTableGroup() {}
 
   virtual bool CreateTable(int32_t table_id,
-                           const ClientTableConfig& table_config) = 0;
+                           const ClientTableConfig &table_config) = 0;
 
   virtual void CreateTableDone() = 0;
 
@@ -45,7 +45,6 @@ public:
   virtual void TurnOnEarlyComm() = 0;
 
   virtual void TurnOffEarlyComm() = 0;
-
 };
 
-}   // namespace petuum
+} // namespace petuum

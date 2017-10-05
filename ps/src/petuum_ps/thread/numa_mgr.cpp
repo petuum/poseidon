@@ -6,7 +6,6 @@ namespace petuum {
 
 bool NumaMgr::set_affinity_ = false;
 std::unique_ptr<AbstractNumaMgrObj> NumaMgr::numa_obj_;
-
 }
 
 #endif

@@ -14,7 +14,7 @@ public:
   virtual ~RandomTableOpLogMetaDense();
 
   void InsertMergeRowOpLogMeta(int32_t row_id,
-                               const RowOpLogMeta& row_oplog_meta);
+                               const RowOpLogMeta &row_oplog_meta);
 
   virtual size_t GetCleanNumNewOpLogMeta();
 
@@ -40,5 +40,4 @@ private:
 
   size_t num_new_oplog_metas_;
 };
-
 }

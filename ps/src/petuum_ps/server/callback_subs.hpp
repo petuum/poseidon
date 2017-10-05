@@ -15,8 +15,8 @@ namespace petuum {
 
 class CallBackSubs {
 public:
-  CallBackSubs() { }
-  ~CallBackSubs() { }
+  CallBackSubs() {}
+  ~CallBackSubs() {}
 
   bool Subscribe(int32_t client_id) {
     bool bit_changed = false;
@@ -36,11 +36,10 @@ public:
     return bit_changed;
   }
 
-  bool AppendRowToBuffs(
-      int32_t client_id_st,
-      boost::unordered_map<int32_t, RecordBuff> *buffs,
-      const void *row_data, size_t row_size, int32_t row_id,
-      int32_t *failed_client_id, size_t *num_clients) {
+  bool AppendRowToBuffs(int32_t client_id_st,
+                        boost::unordered_map<int32_t, RecordBuff> *buffs,
+                        const void *row_data, size_t row_size, int32_t row_id,
+                        int32_t *failed_client_id, size_t *num_clients) {
     // Some simple tests show that iterating bitset isn't too bad.
     // For bitset size below 512, it takes 200~300 ns on an Intel i5 CPU.
     for (int32_t client_id = client_id_st;
@@ -62,24 +61,23 @@ public:
       boost::unordered_map<int32_t, size_t> *client_size_map,
       size_t serialized_size) {
     int32_t client_id;
-    for (client_id = 0;
-         client_id < GlobalContext::get_num_clients(); ++client_id) {
+    for (client_id = 0; client_id < GlobalContext::get_num_clients();
+         ++client_id) {
       if (subscriptions_.test(client_id)) {
-        (*client_size_map)[client_id] += serialized_size + sizeof(int32_t)
-                                         + sizeof(size_t);
+        (*client_size_map)[client_id] +=
+            serialized_size + sizeof(int32_t) + sizeof(size_t);
       }
     }
   }
 
-  void AppendRowToBuffs(
-      boost::unordered_map<int32_t, RecordBuff> *buffs,
-      const void *row_data, size_t row_size, int32_t row_id,
-      size_t *num_clients) {
+  void AppendRowToBuffs(boost::unordered_map<int32_t, RecordBuff> *buffs,
+                        const void *row_data, size_t row_size, int32_t row_id,
+                        size_t *num_clients) {
     // Some simple tests show that iterating bitset isn't too bad.
     // For bitset size below 512, it takes 200~300 ns on an Intel i5 CPU.
     int32_t client_id;
-    for (client_id = 0;
-         client_id < GlobalContext::get_num_clients(); ++client_id) {
+    for (client_id = 0; client_id < GlobalContext::get_num_clients();
+         ++client_id) {
       if (subscriptions_.test(client_id)) {
         bool suc = (*buffs)[client_id].Append(row_id, row_data, row_size);
         if (!suc) {
@@ -96,4 +94,4 @@ private:
   std::bitset<PETUUM_MAX_NUM_CLIENTS> subscriptions_;
 };
 
-}  //namespace petuum
+} // namespace petuum

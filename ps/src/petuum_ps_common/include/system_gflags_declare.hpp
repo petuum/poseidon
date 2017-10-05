@@ -48,5 +48,4 @@ DECLARE_uint64(num_zmq_threads);
 
 namespace petuum {
 void InitTableGroupConfig(TableGroupConfig *config, int32_t num_tables);
-
 }

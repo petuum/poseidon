@@ -18,10 +18,10 @@ namespace petuum {
 //
 // Note that the first line of the file will be considered as name node.
 void GetHostInfos(std::string server_file,
-  std::map<int32_t, HostInfo> *host_map);
+                  std::map<int32_t, HostInfo> *host_map);
 
 void GetServerIDsFromHostMap(std::vector<int32_t> *server_ids,
-  const std::map<int32_t, HostInfo> & host_map);
+                             const std::map<int32_t, HostInfo> &host_map);
 
 UpdateSortPolicy GetUpdateSortPolicy(const std::string &policy);
 
@@ -29,14 +29,14 @@ ConsistencyModel GetConsistencyModel(const std::string &consistency_model);
 
 OpLogType GetOpLogType(const std::string &oplog_type);
 
-AppendOnlyOpLogType GetAppendOnlyOpLogType(
-    const std::string &append_only_oplog_type);
+AppendOnlyOpLogType
+GetAppendOnlyOpLogType(const std::string &append_only_oplog_type);
 
-ProcessStorageType GetProcessStroageType(
-    const std::string &process_storage_type);
+ProcessStorageType
+GetProcessStroageType(const std::string &process_storage_type);
 
 float RestoreInf(float x);
 
 float RestoreInfNaN(float x);
 
-}   // namespace petuum
+} // namespace petuum

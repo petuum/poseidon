@@ -1,0 +1,8 @@
+LR
+	Uses DenseBatchInc
+
+DNN
+	Uses BatchInc
+
+MLR 
+	Users BatchInc

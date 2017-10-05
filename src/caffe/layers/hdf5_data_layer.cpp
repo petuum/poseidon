@@ -6,7 +6,7 @@ TODO:
   :: don't forget to update hdf5_daa_layer.cu accordingly
 - add ability to shuffle filenames if flag is set
 */
-#include <fstream>  // NOLINT(readability/streams)
+#include <fstream> // NOLINT(readability/streams)
 #include <string>
 #include <vector>
 
@@ -20,12 +20,11 @@ TODO:
 
 namespace caffe {
 
-template <typename Dtype>
-HDF5DataLayer<Dtype>::~HDF5DataLayer<Dtype>() { }
+template <typename Dtype> HDF5DataLayer<Dtype>::~HDF5DataLayer<Dtype>() {}
 
 // Load data and label from HDF5 filename into the class property blobs.
 template <typename Dtype>
-void HDF5DataLayer<Dtype>::LoadHDF5FileData(const char* filename) {
+void HDF5DataLayer<Dtype>::LoadHDF5FileData(const char *filename) {
   LOG(INFO) << "Loading HDF5 file" << filename;
   hid_t file_id = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
   if (file_id < 0) {
@@ -35,13 +34,13 @@ void HDF5DataLayer<Dtype>::LoadHDF5FileData(const char* filename) {
 
   const int MIN_DATA_DIM = 2;
   const int MAX_DATA_DIM = 4;
-  hdf5_load_nd_dataset(
-    file_id, "data",  MIN_DATA_DIM, MAX_DATA_DIM, &data_blob_);
+  hdf5_load_nd_dataset(file_id, "data", MIN_DATA_DIM, MAX_DATA_DIM,
+                       &data_blob_);
 
   const int MIN_LABEL_DIM = 1;
   const int MAX_LABEL_DIM = 2;
-  hdf5_load_nd_dataset(
-    file_id, "label", MIN_LABEL_DIM, MAX_LABEL_DIM, &label_blob_);
+  hdf5_load_nd_dataset(file_id, "label", MIN_LABEL_DIM, MAX_LABEL_DIM,
+                       &label_blob_);
 
   herr_t status = H5Fclose(file_id);
   CHECK_GE(status, 0) << "Failed to close HDF5 file " << filename;
@@ -50,11 +49,12 @@ void HDF5DataLayer<Dtype>::LoadHDF5FileData(const char* filename) {
 }
 
 template <typename Dtype>
-void HDF5DataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-    vector<Blob<Dtype>*>* top, const bool init_ps, int* num_tables,
-    map<string, vector<int> >* layer_name_to_blob_global_idx) {
+void HDF5DataLayer<Dtype>::LayerSetUp(
+    const vector<Blob<Dtype> *> &bottom, vector<Blob<Dtype> *> *top,
+    const bool init_ps, int *num_tables,
+    map<string, vector<int>> *layer_name_to_blob_global_idx) {
   // Read the source to parse the filenames.
-  const string& source = this->layer_param_.hdf5_data_param().source();
+  const string &source = this->layer_param_.hdf5_data_param().source();
   LOG(INFO) << "Loading filename from " << source;
   hdf_filenames_.clear();
   std::ifstream source_file(source.c_str());
@@ -75,18 +75,18 @@ void HDF5DataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 
   // Reshape blobs.
   const int batch_size = this->layer_param_.hdf5_data_param().batch_size();
-  (*top)[0]->Reshape(batch_size, data_blob_.channels(),
-                     data_blob_.height(), data_blob_.width());
-  (*top)[1]->Reshape(batch_size, label_blob_.channels(),
-                     label_blob_.height(), label_blob_.width());
+  (*top)[0]->Reshape(batch_size, data_blob_.channels(), data_blob_.height(),
+                     data_blob_.width());
+  (*top)[1]->Reshape(batch_size, label_blob_.channels(), label_blob_.height(),
+                     label_blob_.width());
   LOG(INFO) << "output data size: " << (*top)[0]->num() << ","
-      << (*top)[0]->channels() << "," << (*top)[0]->height() << ","
-      << (*top)[0]->width();
+            << (*top)[0]->channels() << "," << (*top)[0]->height() << ","
+            << (*top)[0]->width();
 }
 
 template <typename Dtype>
-void HDF5DataLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top) {
+void HDF5DataLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype> *> &bottom,
+                                       vector<Blob<Dtype> *> *top) {
   const int batch_size = this->layer_param_.hdf5_data_param().batch_size();
   const int data_count = (*top)[0]->count() / (*top)[0]->num();
   const int label_data_count = (*top)[1]->count() / (*top)[1]->num();
@@ -117,4 +117,4 @@ STUB_GPU_FORWARD(HDF5DataLayer, Forward);
 
 INSTANTIATE_CLASS(HDF5DataLayer);
 
-}  // namespace caffe
+} // namespace caffe

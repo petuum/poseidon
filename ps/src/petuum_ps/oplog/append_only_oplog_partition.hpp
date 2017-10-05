@@ -12,7 +12,8 @@
 namespace petuum {
 class AppendOnlyOpLogPartition : public AbstractOpLog {
 public:
-  AppendOnlyOpLogPartition(size_t buffer_capacity, const AbstractRow *sample_row,
+  AppendOnlyOpLogPartition(size_t buffer_capacity,
+                           const AbstractRow *sample_row,
                            AppendOnlyOpLogType append_only_oplog_type,
                            size_t dense_row_capacity,
                            size_t per_thread_buff_pool_size);
@@ -25,9 +26,9 @@ public:
   // exclusive access
   int32_t Inc(int32_t row_id, int32_t column_id, const void *delta);
   int32_t BatchInc(int32_t row_id, const int32_t *column_ids,
-                const void *deltas, int32_t num_updates);
-  int32_t DenseBatchInc(int32_t row_id, const void *updates,
-                     int32_t index_st, int32_t num_updates);
+                   const void *deltas, int32_t num_updates);
+  int32_t DenseBatchInc(int32_t row_id, const void *updates, int32_t index_st,
+                        int32_t num_updates);
 
   // Guaranteed exclusive accesses to the same row id.
   bool FindOpLog(int32_t row_id, OpLogAccessor *oplog_accessor);
@@ -44,13 +45,14 @@ public:
 
   // Mutual exclusive accesses
   bool GetEraseOpLog(int32_t row_id, AbstractRowOpLog **row_oplog_ptr);
-  bool GetEraseOpLogIf(int32_t row_id, GetOpLogTestFunc test,
-                       void *test_args, AbstractRowOpLog **row_oplog_ptr);
+  bool GetEraseOpLogIf(int32_t row_id, GetOpLogTestFunc test, void *test_args,
+                       AbstractRowOpLog **row_oplog_ptr);
   bool GetInvalidateOpLogMeta(int32_t row_id, RowOpLogMeta *row_oplog_meta);
 
   AbstractAppendOnlyBuffer *GetAppendOnlyBuffer(int32_t comm_channel_idx);
 
-  void PutBackBuffer(int32_t comm_channel_idx, AbstractAppendOnlyBuffer* buff);
+  void PutBackBuffer(int32_t comm_channel_idx, AbstractAppendOnlyBuffer *buff);
+
 private:
   AbstractAppendOnlyBuffer *CreateAppendOnlyBuffer();
 
@@ -62,9 +64,9 @@ private:
   const size_t per_thread_pool_size_;
 
   boost::thread_specific_ptr<AbstractAppendOnlyBuffer> append_only_buff_;
-  MPMCQueue<AbstractAppendOnlyBuffer*> shared_queue_;
+  MPMCQueue<AbstractAppendOnlyBuffer *> shared_queue_;
 
   OpLogBufferManager oplog_buffer_mgr_;
 };
 
-}   // namespace petuum
+} // namespace petuum

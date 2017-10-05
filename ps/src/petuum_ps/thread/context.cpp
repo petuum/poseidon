@@ -4,7 +4,7 @@ namespace petuum {
 
 __thread ThreadContext::Info *ThreadContext::thr_info_;
 
-CommBus* GlobalContext::comm_bus;
+CommBus *GlobalContext::comm_bus;
 
 int32_t GlobalContext::num_clients_ = 0;
 
@@ -66,4 +66,4 @@ bool GlobalContext::naive_table_oplog_meta_;
 bool GlobalContext::suppression_on_;
 
 bool GlobalContext::use_approx_sort_;
-}   // namespace petuum
+} // namespace petuum

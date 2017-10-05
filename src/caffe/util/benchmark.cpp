@@ -6,9 +6,7 @@
 namespace caffe {
 
 Timer::Timer()
-    : initted_(false),
-      running_(false),
-      has_run_at_least_once_(false) {
+    : initted_(false), running_(false), has_run_at_least_once_(false) {
   Init();
 }
 
@@ -65,10 +63,10 @@ float Timer::MilliSeconds() {
   }
   if (Caffe::mode() == Caffe::GPU) {
 #ifndef CPU_ONLY
-    CUDA_CHECK(cudaEventElapsedTime(&elapsed_milliseconds_, start_gpu_,
-                                    stop_gpu_));
+    CUDA_CHECK(
+        cudaEventElapsedTime(&elapsed_milliseconds_, start_gpu_, stop_gpu_));
 #else
-      NO_GPU;
+    NO_GPU;
 #endif
   } else {
     elapsed_milliseconds_ = (stop_cpu_ - start_cpu_).total_milliseconds();
@@ -76,9 +74,7 @@ float Timer::MilliSeconds() {
   return elapsed_milliseconds_;
 }
 
-float Timer::Seconds() {
-  return MilliSeconds() / 1000.;
-}
+float Timer::Seconds() { return MilliSeconds() / 1000.; }
 
 void Timer::Init() {
   if (!initted()) {
@@ -94,4 +90,4 @@ void Timer::Init() {
   }
 }
 
-}  // namespace caffe
+} // namespace caffe

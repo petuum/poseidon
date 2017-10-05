@@ -11,15 +11,14 @@
 
 namespace petuum {
 TableGroup::TableGroup(const TableGroupConfig &table_group_config,
-                       bool table_access, int32_t *init_thread_id):
-    AbstractTableGroup(),
-    max_table_staleness_(0) {
+                       bool table_access, int32_t *init_thread_id)
+    : AbstractTableGroup(), max_table_staleness_(0) {
 
-  int32_t num_comm_channels_per_client
-      = table_group_config.num_comm_channels_per_client;
+  int32_t num_comm_channels_per_client =
+      table_group_config.num_comm_channels_per_client;
   int32_t num_local_app_threads = table_group_config.num_local_app_threads;
-  int32_t num_local_table_threads = table_access ? num_local_app_threads
-    : (num_local_app_threads - 1);
+  int32_t num_local_table_threads =
+      table_access ? num_local_app_threads : (num_local_app_threads - 1);
 
   int32_t num_tables = table_group_config.num_tables;
   int32_t num_total_clients = table_group_config.num_total_clients;
@@ -30,39 +29,27 @@ TableGroup::TableGroup(const TableGroupConfig &table_group_config,
   ConsistencyModel consistency_model = table_group_config.consistency_model;
   int32_t local_id_min = GlobalContext::get_thread_id_min(client_id);
   int32_t local_id_max = GlobalContext::get_thread_id_max(client_id);
-  num_app_threads_registered_ = 1;  // init thread is the first one
+  num_app_threads_registered_ = 1; // init thread is the first one
 
   STATS_INIT(table_group_config);
   STATS_REGISTER_THREAD(kAppThread);
 
   // can be Inited after CommBus but must be before everything else
   GlobalContext::Init(
-      num_comm_channels_per_client,
-      num_local_app_threads,
-      num_local_table_threads,
-      num_tables,
-      num_total_clients,
-      host_map,
-      client_id,
-      server_ring_size,
-      consistency_model,
-      table_group_config.aggressive_cpu,
-      table_group_config.snapshot_clock,
-      table_group_config.snapshot_dir,
-      table_group_config.resume_clock,
-      table_group_config.resume_dir,
-      table_group_config.update_sort_policy,
+      num_comm_channels_per_client, num_local_app_threads,
+      num_local_table_threads, num_tables, num_total_clients, host_map,
+      client_id, server_ring_size, consistency_model,
+      table_group_config.aggressive_cpu, table_group_config.snapshot_clock,
+      table_group_config.snapshot_dir, table_group_config.resume_clock,
+      table_group_config.resume_dir, table_group_config.update_sort_policy,
       table_group_config.bg_idle_milli,
       table_group_config.client_bandwidth_mbps,
       table_group_config.server_bandwidth_mbps,
       table_group_config.thread_oplog_batch_size,
       table_group_config.server_idle_milli,
-      table_group_config.row_candidate_factor,
-      table_group_config.numa_index,
-      table_group_config.numa_policy,
-      table_group_config.naive_table_oplog_meta,
-      table_group_config.use_approx_sort,
-      table_group_config.suppression_on);
+      table_group_config.row_candidate_factor, table_group_config.numa_index,
+      table_group_config.numa_policy, table_group_config.naive_table_oplog_meta,
+      table_group_config.use_approx_sort, table_group_config.suppression_on);
 
   NumaMgr::Init(table_group_config.numa_opt);
 
@@ -70,12 +57,11 @@ TableGroup::TableGroup(const TableGroupConfig &table_group_config,
 
   LOG(INFO) << "num_zmq_threads = " << num_zmq_threads;
 
-  CommBus *comm_bus = new CommBus(local_id_min, local_id_max,
-                                  num_total_clients, num_zmq_threads);
+  CommBus *comm_bus = new CommBus(local_id_min, local_id_max, num_total_clients,
+                                  num_zmq_threads);
   GlobalContext::comm_bus = comm_bus;
 
-  *init_thread_id = local_id_min
-                    + GlobalContext::kInitThreadIDOffset;
+  *init_thread_id = local_id_min + GlobalContext::kInitThreadIDOffset;
   CommBus::Config comm_config(*init_thread_id, CommBus::kNone, "");
 
   GlobalContext::comm_bus->ThreadRegister(comm_config);
@@ -113,7 +99,7 @@ TableGroup::~TableGroup() {
 
   BgWorkers::ShutDown();
   GlobalContext::comm_bus->ThreadDeregister();
-  for(auto iter = tables_.begin(); iter != tables_.end(); iter++){
+  for (auto iter = tables_.begin(); iter != tables_.end(); iter++) {
     delete iter->second;
   }
 
@@ -124,14 +110,13 @@ TableGroup::~TableGroup() {
 }
 
 bool TableGroup::CreateTable(int32_t table_id,
-  const ClientTableConfig& table_config) {
-  max_table_staleness_ = std::max(max_table_staleness_,
-      table_config.table_info.table_staleness);
+                             const ClientTableConfig &table_config) {
+  max_table_staleness_ =
+      std::max(max_table_staleness_, table_config.table_info.table_staleness);
 
   bool suc = BgWorkers::CreateTable(table_id, table_config);
-  if (suc
-      && (GlobalContext::get_num_app_threads()
-	  == GlobalContext::get_num_table_threads())) {
+  if (suc && (GlobalContext::get_num_app_threads() ==
+              GlobalContext::get_num_table_threads())) {
     auto iter = tables_.find(table_id);
     iter->second->RegisterThread();
   }
@@ -141,7 +126,7 @@ bool TableGroup::CreateTable(int32_t table_id,
 void TableGroup::CreateTableDone() {
   BgWorkers::WaitCreateTable();
   pthread_barrier_init(&register_barrier_, 0,
-    GlobalContext::get_num_table_threads());
+                       GlobalContext::get_num_table_threads());
 }
 
 void TableGroup::WaitThreadRegister() {
@@ -155,8 +140,8 @@ int32_t TableGroup::RegisterThread() {
   STATS_REGISTER_THREAD(kAppThread);
   int app_thread_id_offset = num_app_threads_registered_++;
 
-  int32_t thread_id = GlobalContext::get_local_id_min()
-    + GlobalContext::kInitThreadIDOffset + app_thread_id_offset;
+  int32_t thread_id = GlobalContext::get_local_id_min() +
+                      GlobalContext::kInitThreadIDOffset + app_thread_id_offset;
 
   petuum::CommBus::Config comm_config(thread_id, petuum::CommBus::kNone, "");
 
@@ -179,7 +164,7 @@ int32_t TableGroup::RegisterThread() {
   return thread_id;
 }
 
-void TableGroup::DeregisterThread(){
+void TableGroup::DeregisterThread() {
   for (auto table_iter = tables_.cbegin(); table_iter != tables_.cend();
        table_iter++) {
     table_iter->second->DeregisterThread();
@@ -205,7 +190,7 @@ void TableGroup::GlobalBarrier() {
 
 void TableGroup::ClockAggressive() {
   for (auto table_iter = tables_.cbegin(); table_iter != tables_.cend();
-    table_iter++) {
+       table_iter++) {
     table_iter->second->Clock();
   }
   int clock = vector_clock_.Tick(ThreadContext::get_id());
@@ -218,27 +203,22 @@ void TableGroup::ClockAggressive() {
 
 void TableGroup::ClockConservative() {
   for (auto table_iter = tables_.cbegin(); table_iter != tables_.cend();
-    table_iter++) {
+       table_iter++) {
     table_iter->second->Clock();
   }
   int clock = vector_clock_.Tick(ThreadContext::get_id());
-  //LOG(INFO) << "new_clock = " << clock << " " << ThreadContext::get_id()
+  // LOG(INFO) << "new_clock = " << clock << " " << ThreadContext::get_id()
   //        << " my clock = " << ThreadContext::get_clock();
 
   if (clock != 0) {
-    //LOG(INFO) << "new_clock = " << clock
+    // LOG(INFO) << "new_clock = " << clock
     //        << " " << GlobalContext::get_client_id()
     //        << " " << ThreadContext::get_id();
     BgWorkers::ClockAllTables();
   }
 }
 
-void TableGroup::TurnOnEarlyComm() {
-  BgWorkers::TurnOnEarlyComm();
-}
+void TableGroup::TurnOnEarlyComm() { BgWorkers::TurnOnEarlyComm(); }
 
-void TableGroup::TurnOffEarlyComm() {
-  BgWorkers::TurnOffEarlyComm();
-}
-
+void TableGroup::TurnOffEarlyComm() { BgWorkers::TurnOffEarlyComm(); }
 }

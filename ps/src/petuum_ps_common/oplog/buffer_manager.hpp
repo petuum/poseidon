@@ -17,17 +17,15 @@ namespace petuum {
 
 class BufferPool : boost::noncopyable {
 public:
-  BufferPool(int32_t thread_id, size_t pool_size, AppendOnlyOpLogType append_only_oplog_type,
-             size_t buff_capacity, size_t update_size, size_t dense_row_capacity):
-      pool_size_(pool_size),
-      num_buffs_in_pool_(pool_size),
-      begin_(0),
-      end_(0),
-      pool_(pool_size) {
+  BufferPool(int32_t thread_id, size_t pool_size,
+             AppendOnlyOpLogType append_only_oplog_type, size_t buff_capacity,
+             size_t update_size, size_t dense_row_capacity)
+      : pool_size_(pool_size), num_buffs_in_pool_(pool_size), begin_(0),
+        end_(0), pool_(pool_size) {
     for (auto &buff_ptr : pool_) {
-      buff_ptr = CreateAppendOnlyBuffer(thread_id,
-                                        append_only_oplog_type, buff_capacity,
-                                        update_size, dense_row_capacity);
+      buff_ptr = CreateAppendOnlyBuffer(thread_id, append_only_oplog_type,
+                                        buff_capacity, update_size,
+                                        dense_row_capacity);
     }
   }
 
@@ -40,7 +38,8 @@ public:
 
   AbstractAppendOnlyBuffer *GetBuff() {
     std::unique_lock<std::mutex> lock(mtx_);
-    while (num_buffs_in_pool_ == 0) cv_.wait(lock);
+    while (num_buffs_in_pool_ == 0)
+      cv_.wait(lock);
 
     num_buffs_in_pool_--;
     AbstractAppendOnlyBuffer *buff = pool_[begin_];
@@ -63,26 +62,24 @@ public:
 
 private:
   static AbstractAppendOnlyBuffer *CreateAppendOnlyBuffer(
-      int32_t thread_id,
-      AppendOnlyOpLogType append_only_oplog_type,
+      int32_t thread_id, AppendOnlyOpLogType append_only_oplog_type,
       size_t buff_capacity, size_t update_size, size_t dense_row_capacity) {
     AbstractAppendOnlyBuffer *buff = 0;
-    switch(append_only_oplog_type) {
-      case Inc:
-        buff = static_cast<AbstractAppendOnlyBuffer*>(
-            new IncAppendOnlyBuffer(thread_id, buff_capacity, update_size));
-        break;
-      case BatchInc:
-        buff = static_cast<AbstractAppendOnlyBuffer*>(
-            new BatchIncAppendOnlyBuffer(thread_id, buff_capacity, update_size));
-        break;
-      case DenseBatchInc:
-        buff = static_cast<AbstractAppendOnlyBuffer*>(
-            new DenseAppendOnlyBuffer(thread_id, buff_capacity, update_size,
-                                      dense_row_capacity));
+    switch (append_only_oplog_type) {
+    case Inc:
+      buff = static_cast<AbstractAppendOnlyBuffer *>(
+          new IncAppendOnlyBuffer(thread_id, buff_capacity, update_size));
       break;
-      default:
-        LOG(FATAL) << "Unknown type = " << append_only_oplog_type;
+    case BatchInc:
+      buff = static_cast<AbstractAppendOnlyBuffer *>(
+          new BatchIncAppendOnlyBuffer(thread_id, buff_capacity, update_size));
+      break;
+    case DenseBatchInc:
+      buff = static_cast<AbstractAppendOnlyBuffer *>(new DenseAppendOnlyBuffer(
+          thread_id, buff_capacity, update_size, dense_row_capacity));
+      break;
+    default:
+      LOG(FATAL) << "Unknown type = " << append_only_oplog_type;
     }
     return buff;
   }
@@ -91,16 +88,15 @@ private:
 
   size_t num_buffs_in_pool_;
   int begin_, end_;
-  std::vector<AbstractAppendOnlyBuffer*> pool_;
+  std::vector<AbstractAppendOnlyBuffer *> pool_;
   std::mutex mtx_;
   std::condition_variable cv_;
 };
 
 class OpLogBufferManager {
 public:
-  OpLogBufferManager(size_t num_table_threads, int32_t head_thread_id):
-      head_thread_id_(head_thread_id),
-      buffer_pool_vec_(num_table_threads) { }
+  OpLogBufferManager(size_t num_table_threads, int32_t head_thread_id)
+      : head_thread_id_(head_thread_id), buffer_pool_vec_(num_table_threads) {}
 
   ~OpLogBufferManager() {
     for (auto &pool_ptr : buffer_pool_vec_) {
@@ -109,13 +105,14 @@ public:
     }
   }
 
-  void CreateBufferPool(
-      int32_t thread_id,  size_t pool_size, AppendOnlyOpLogType append_only_oplog_type,
-      size_t buff_capacity, size_t update_size, size_t dense_row_capacity) {
+  void CreateBufferPool(int32_t thread_id, size_t pool_size,
+                        AppendOnlyOpLogType append_only_oplog_type,
+                        size_t buff_capacity, size_t update_size,
+                        size_t dense_row_capacity) {
     int32_t idx = thread_id - head_thread_id_;
-    buffer_pool_vec_[idx] = new BufferPool(
-        thread_id, pool_size, append_only_oplog_type, buff_capacity, update_size,
-        dense_row_capacity);
+    buffer_pool_vec_[idx] =
+        new BufferPool(thread_id, pool_size, append_only_oplog_type,
+                       buff_capacity, update_size, dense_row_capacity);
   }
 
   AbstractAppendOnlyBuffer *GetBuff(int32_t thread_id) {
@@ -130,7 +127,6 @@ public:
 
 private:
   const int32_t head_thread_id_;
-  std::vector<BufferPool*> buffer_pool_vec_;
+  std::vector<BufferPool *> buffer_pool_vec_;
 };
-
 }

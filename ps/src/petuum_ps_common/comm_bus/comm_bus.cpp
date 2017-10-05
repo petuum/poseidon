@@ -22,17 +22,16 @@ void CommBus::MakeInProcAddr(int32_t entity_id, std::string *result) {
 }
 
 void CommBus::MakeInterProcAddr(const std::string &network_addr,
-  std::string *result) {
+                                std::string *result) {
   *result = kInterProcPrefix;
   *result += network_addr;
 }
 
 bool CommBus::IsLocalEntity(int32_t entity_id) {
-  //VLOG(0) << "e_st_ = " << e_st_
+  // VLOG(0) << "e_st_ = " << e_st_
   //	  << " e_end_ = " << e_end_;
   return (e_st_ <= entity_id) && (entity_id <= e_end_);
 }
-
 
 CommBus::CommBus(int32_t e_st, int32_t e_end, int32_t num_clients,
                  int32_t num_zmq_thrs) {
@@ -41,9 +40,9 @@ CommBus::CommBus(int32_t e_st, int32_t e_end, int32_t num_clients,
 
   try {
     zmq_ctx_ = new zmq::context_t(num_zmq_thrs);
-  } catch(zmq::error_t &e) {
+  } catch (zmq::error_t &e) {
     LOG(FATAL) << "Faield to create zmq context " << e.what();
-  } catch(...) {
+  } catch (...) {
     LOG(FATAL) << "Failed to create zmq context";
   }
 
@@ -60,27 +59,26 @@ CommBus::CommBus(int32_t e_st, int32_t e_end, int32_t num_clients,
   }
 }
 
-CommBus::~CommBus() {
-  delete zmq_ctx_;
-}
+CommBus::~CommBus() { delete zmq_ctx_; }
 
 void CommBus::SetUpRouterSocket(zmq::socket_t *sock, int32_t id,
-  int num_bytes_send_buff, int num_bytes_recv_buff) {
+                                int num_bytes_send_buff,
+                                int num_bytes_recv_buff) {
   int32_t my_id = ZMQUtil::EntityID2ZmqID(id);
   ZMQUtil::ZMQSetSockOpt(sock, ZMQ_IDENTITY, &my_id, sizeof(my_id));
 
   int sock_mandatory = 1;
   ZMQUtil::ZMQSetSockOpt(sock, ZMQ_ROUTER_MANDATORY, &(sock_mandatory),
-    sizeof(sock_mandatory));
+                         sizeof(sock_mandatory));
 
   if (num_bytes_send_buff != 0) {
     ZMQUtil::ZMQSetSockOpt(sock, ZMQ_SNDBUF, &(num_bytes_send_buff),
-      sizeof(num_bytes_send_buff));
+                           sizeof(num_bytes_send_buff));
   }
 
   if (num_bytes_recv_buff != 0) {
     ZMQUtil::ZMQSetSockOpt(sock, ZMQ_RCVBUF, &(num_bytes_recv_buff),
-        sizeof(num_bytes_recv_buff));
+                           sizeof(num_bytes_recv_buff));
   }
 
   int linger = -1;
@@ -98,22 +96,22 @@ void CommBus::ThreadRegister(const Config &config) {
   thr_info_->num_bytes_inproc_recv_buff_ = config.num_bytes_inproc_recv_buff_;
 
   thr_info_->num_bytes_interproc_send_buff_ =
-    config.num_bytes_interproc_send_buff_;
+      config.num_bytes_interproc_send_buff_;
   thr_info_->num_bytes_interproc_recv_buff_ =
-    config.num_bytes_interproc_recv_buff_;
+      config.num_bytes_interproc_recv_buff_;
 
   if (config.ltype_ & kInProc) {
     try {
       thr_info_->inproc_sock_.reset(new zmq::socket_t(*zmq_ctx_, ZMQ_ROUTER));
-    } catch(...) {
+    } catch (...) {
       LOG(FATAL) << "Failed creating router socket";
     }
 
     zmq::socket_t *sock = thr_info_->inproc_sock_.get();
 
     SetUpRouterSocket(sock, config.entity_id_,
-        config.num_bytes_inproc_send_buff_,
-        config.num_bytes_inproc_recv_buff_);
+                      config.num_bytes_inproc_send_buff_,
+                      config.num_bytes_inproc_recv_buff_);
 
     std::string bind_addr;
     MakeInProcAddr(config.entity_id_, &bind_addr);
@@ -125,15 +123,15 @@ void CommBus::ThreadRegister(const Config &config) {
     try {
       thr_info_->interproc_sock_.reset(
           new zmq::socket_t(*zmq_ctx_, ZMQ_ROUTER));
-    } catch(...) {
+    } catch (...) {
       LOG(FATAL) << "Failed creating router socket";
     }
 
     zmq::socket_t *sock = thr_info_->interproc_sock_.get();
 
     SetUpRouterSocket(sock, config.entity_id_,
-        config.num_bytes_inproc_send_buff_,
-        config.num_bytes_inproc_recv_buff_);
+                      config.num_bytes_inproc_send_buff_,
+                      config.num_bytes_inproc_recv_buff_);
 
     std::string bind_addr;
     MakeInterProcAddr(config.network_addr_, &bind_addr);
@@ -142,9 +140,7 @@ void CommBus::ThreadRegister(const Config &config) {
   }
 }
 
-void CommBus::ThreadDeregister() {
-  thr_info_.reset();
-}
+void CommBus::ThreadDeregister() { thr_info_.reset(); }
 
 void CommBus::ConnectTo(int32_t entity_id, void *connect_msg, size_t size) {
   CHECK(IsLocalEntity(entity_id)) << "Not local entity " << entity_id;
@@ -159,8 +155,8 @@ void CommBus::ConnectTo(int32_t entity_id, void *connect_msg, size_t size) {
     sock = thr_info_->inproc_sock_.get();
 
     SetUpRouterSocket(sock, thr_info_->entity_id_,
-        thr_info_->num_bytes_inproc_send_buff_,
-        thr_info_->num_bytes_inproc_recv_buff_);
+                      thr_info_->num_bytes_inproc_send_buff_,
+                      thr_info_->num_bytes_inproc_recv_buff_);
   }
   std::string connect_addr;
   MakeInProcAddr(entity_id, &connect_addr);
@@ -169,22 +165,22 @@ void CommBus::ConnectTo(int32_t entity_id, void *connect_msg, size_t size) {
 }
 
 void CommBus::ConnectTo(int32_t entity_id, const std::string &network_addr,
-    void *connect_msg, size_t size) {
+                        void *connect_msg, size_t size) {
   CHECK(!IsLocalEntity(entity_id)) << "Local entity " << entity_id;
 
   zmq::socket_t *sock = thr_info_->interproc_sock_.get();
   if (sock == NULL) {
     try {
-      thr_info_->interproc_sock_.reset(new zmq::socket_t(*zmq_ctx_,
-        ZMQ_ROUTER));
+      thr_info_->interproc_sock_.reset(
+          new zmq::socket_t(*zmq_ctx_, ZMQ_ROUTER));
     } catch (...) {
       LOG(FATAL) << "Failed creating router socket";
     }
     sock = thr_info_->interproc_sock_.get();
 
     SetUpRouterSocket(sock, thr_info_->entity_id_,
-        thr_info_->num_bytes_interproc_send_buff_,
-        thr_info_->num_bytes_interproc_recv_buff_);
+                      thr_info_->num_bytes_interproc_send_buff_,
+                      thr_info_->num_bytes_interproc_recv_buff_);
   }
 
   std::string connect_addr;
@@ -250,7 +246,6 @@ size_t CommBus::SendInProc(int32_t entity_id, zmq::message_t &msg) {
   return nbytes;
 }
 
-
 void CommBus::Recv(int32_t *entity_id, zmq::message_t *msg) {
   if (thr_info_->pollitems_.get() == NULL) {
     thr_info_->pollitems_.reset(new zmq::pollitem_t[2]);
@@ -299,7 +294,7 @@ bool CommBus::RecvAsync(int32_t *entity_id, zmq::message_t *msg) {
 }
 
 bool CommBus::RecvTimeOut(int32_t *entity_id, zmq::message_t *msg,
-    long timeout_milli) {
+                          long timeout_milli) {
   if (thr_info_->pollitems_.get() == NULL) {
     thr_info_->pollitems_.reset(new zmq::pollitem_t[2]);
     thr_info_->pollitems_[0].socket = *(thr_info_->inproc_sock_);
@@ -332,8 +327,8 @@ void CommBus::RecvInProc(int32_t *entity_id, zmq::message_t *msg) {
 
 bool CommBus::RecvInProcAsync(int32_t *entity_id, zmq::message_t *msg) {
   int32_t sender_id;
-  bool recved = ZMQUtil::ZMQRecvAsync(thr_info_->inproc_sock_.get(),
-      &sender_id, msg);
+  bool recved =
+      ZMQUtil::ZMQRecvAsync(thr_info_->inproc_sock_.get(), &sender_id, msg);
 
   if (recved) {
     *entity_id = ZMQUtil::ZmqID2EntityID(sender_id);
@@ -342,7 +337,7 @@ bool CommBus::RecvInProcAsync(int32_t *entity_id, zmq::message_t *msg) {
 }
 
 bool CommBus::RecvInProcTimeOut(int32_t *entity_id, zmq::message_t *msg,
-    long timeout_milli) {
+                                long timeout_milli) {
   if (thr_info_->inproc_pollitem_.get() == NULL) {
     thr_info_->inproc_pollitem_.reset(new zmq::pollitem_t);
     thr_info_->inproc_pollitem_->socket = *(thr_info_->inproc_sock_);
@@ -371,8 +366,8 @@ void CommBus::RecvInterProc(int32_t *entity_id, zmq::message_t *msg) {
 
 bool CommBus::RecvInterProcAsync(int32_t *entity_id, zmq::message_t *msg) {
   int32_t sender_id;
-  bool recved = ZMQUtil::ZMQRecvAsync(thr_info_->interproc_sock_.get(),
-      &sender_id, msg);
+  bool recved =
+      ZMQUtil::ZMQRecvAsync(thr_info_->interproc_sock_.get(), &sender_id, msg);
 
   if (recved) {
     *entity_id = ZMQUtil::ZmqID2EntityID(sender_id);
@@ -381,7 +376,7 @@ bool CommBus::RecvInterProcAsync(int32_t *entity_id, zmq::message_t *msg) {
 }
 
 bool CommBus::RecvInterProcTimeOut(int32_t *entity_id, zmq::message_t *msg,
-    long timeout_milli) {
+                                   long timeout_milli) {
   if (thr_info_->interproc_pollitem_.get() == NULL) {
     thr_info_->interproc_pollitem_.reset(new zmq::pollitem_t);
     thr_info_->interproc_pollitem_->socket = *(thr_info_->interproc_sock_);
@@ -402,4 +397,4 @@ bool CommBus::RecvInterProcTimeOut(int32_t *entity_id, zmq::message_t *msg,
   return true;
 }
 
-}   // namespace petuum
+} // namespace petuum

@@ -1,12 +1,11 @@
 #include <petuum_ps/thread/random_table_oplog_meta.hpp>
 
 namespace petuum {
-RandomTableOpLogMeta::RandomTableOpLogMeta(const AbstractRow *sample_row):
-    sample_row_(sample_row),
-    num_new_oplog_metas_(0),
-    uniform_dist_(0, INT_MAX) { }
+RandomTableOpLogMeta::RandomTableOpLogMeta(const AbstractRow *sample_row)
+    : sample_row_(sample_row), num_new_oplog_metas_(0),
+      uniform_dist_(0, INT_MAX) {}
 
-RandomTableOpLogMeta::~RandomTableOpLogMeta() { }
+RandomTableOpLogMeta::~RandomTableOpLogMeta() {}
 
 void RandomTableOpLogMeta::InsertMergeRowOpLogMeta(
     int32_t row_id, const RowOpLogMeta &row_oplog_meta) {
@@ -27,12 +26,13 @@ size_t RandomTableOpLogMeta::GetCleanNumNewOpLogMeta() {
 
 int32_t RandomTableOpLogMeta::GetAndClearNextInOrder() {
   size_t oplog_meta_size = oplog_meta_.size();
-  if (oplog_meta_size == 0) return -1;
+  if (oplog_meta_size == 0)
+    return -1;
 
   do {
     meta_iter_ = oplog_meta_.begin();
     std::advance(meta_iter_, uniform_dist_(generator_) % oplog_meta_size);
-  } while(meta_iter_ == oplog_meta_.end());
+  } while (meta_iter_ == oplog_meta_.end());
 
   int32_t row_id = meta_iter_->first;
 
@@ -54,7 +54,8 @@ int32_t RandomTableOpLogMeta::GetAndClearNextUptoClock() {
     }
   }
 
-  if (meta_iter_ == oplog_meta_.end()) return -1;
+  if (meta_iter_ == oplog_meta_.end())
+    return -1;
 
   int32_t row_id = meta_iter_->first;
   meta_iter_ = oplog_meta_.erase(meta_iter_);
@@ -65,5 +66,4 @@ int32_t RandomTableOpLogMeta::GetAndClearNextUptoClock() {
 size_t RandomTableOpLogMeta::GetNumRowOpLogs() const {
   return oplog_meta_.size();
 }
-
 }

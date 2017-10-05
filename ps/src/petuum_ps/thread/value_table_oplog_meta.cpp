@@ -4,26 +4,21 @@
 #include <algorithm>
 namespace petuum {
 ValueTableOpLogMeta::ValueTableOpLogMeta(const AbstractRow *sample_row,
-                                         size_t table_size):
-    table_size_(table_size),
-    sample_row_(sample_row),
-    heap_(table_size),
-    heap_size_(0),
-    heap_index_(table_size, -1),
-    num_new_oplog_metas_(0) { }
+                                         size_t table_size)
+    : table_size_(table_size), sample_row_(sample_row), heap_(table_size),
+      heap_size_(0), heap_index_(table_size, -1), num_new_oplog_metas_(0) {}
 
-ValueTableOpLogMeta::~ValueTableOpLogMeta() { }
+ValueTableOpLogMeta::~ValueTableOpLogMeta() {}
 
-bool ValueTableOpLogMeta::CompRowOpLogMeta(
-    const IndexRowOpLogMeta &oplog1,
-    const IndexRowOpLogMeta &oplog2) {
+bool ValueTableOpLogMeta::CompRowOpLogMeta(const IndexRowOpLogMeta &oplog1,
+                                           const IndexRowOpLogMeta &oplog2) {
 
   if (oplog1.importance == oplog2.importance) {
     return oplog1.row_id < oplog2.row_id;
   } else {
     return (oplog1.importance > oplog2.importance);
     // min first
-    //return (oplog1.importance <= oplog2.importance);
+    // return (oplog1.importance <= oplog2.importance);
   }
 }
 
@@ -39,18 +34,15 @@ int32_t ValueTableOpLogMeta::HeapParent(int32_t index) {
   return (index - 1) / 2;
 }
 
-int32_t ValueTableOpLogMeta::HeapRight(int32_t index) {
-  return index*2 + 2;
-}
+int32_t ValueTableOpLogMeta::HeapRight(int32_t index) { return index * 2 + 2; }
 
-int32_t ValueTableOpLogMeta::HeapLeft(int32_t index) {
-  return index*2 + 1;
-}
+int32_t ValueTableOpLogMeta::HeapLeft(int32_t index) { return index * 2 + 1; }
 
-void ValueTableOpLogMeta::HeapIncrease(
-    int32_t index, const RowOpLogMeta &row_oplog_meta) {
+void ValueTableOpLogMeta::HeapIncrease(int32_t index,
+                                       const RowOpLogMeta &row_oplog_meta) {
   heap_[index].importance += row_oplog_meta.get_importance();
-  if (heap_[index].clock == -1 || heap_[index].clock > row_oplog_meta.get_clock()) {
+  if (heap_[index].clock == -1 ||
+      heap_[index].clock > row_oplog_meta.get_clock()) {
     heap_[index].clock = row_oplog_meta.get_clock();
   }
 
@@ -66,8 +58,8 @@ void ValueTableOpLogMeta::HeapIncrease(
   }
 }
 
-void ValueTableOpLogMeta::HeapInsert(
-    int32_t row_id, const RowOpLogMeta &row_oplog_meta) {
+void ValueTableOpLogMeta::HeapInsert(int32_t row_id,
+                                     const RowOpLogMeta &row_oplog_meta) {
   heap_size_++;
   int32_t heap_last = heap_size_ - 1;
   heap_[heap_last] = {row_id, -1, 0.0};
@@ -114,7 +106,8 @@ void ValueTableOpLogMeta::HeapMaxHeapify(int32_t index) {
 }
 
 void ValueTableOpLogMeta::HeapBuildMaxHeap() {
-  if (heap_size_ == 0) return;
+  if (heap_size_ == 0)
+    return;
   int32_t sort_index = HeapParent((heap_size_ - 1));
 
   while (sort_index >= 0) {
@@ -124,8 +117,7 @@ void ValueTableOpLogMeta::HeapBuildMaxHeap() {
 }
 
 void ValueTableOpLogMeta::InsertMergeRowOpLogMeta(
-    int32_t row_id,
-    const RowOpLogMeta& row_oplog_meta) {
+    int32_t row_id, const RowOpLogMeta &row_oplog_meta) {
   int32_t index = heap_index_[row_id];
   if (index >= 0) {
     HeapIncrease(index, row_oplog_meta);
@@ -143,7 +135,7 @@ size_t ValueTableOpLogMeta::GetCleanNumNewOpLogMeta() {
 
 int32_t ValueTableOpLogMeta::GetAndClearNextInOrder() {
   auto max = HeapExtractMax();
-  //LOG(INFO) << "OpMeta " << "r " << max.row_id << " x " << max.importance;
+  // LOG(INFO) << "OpMeta " << "r " << max.row_id << " x " << max.importance;
   return max.row_id;
 }
 
@@ -151,10 +143,9 @@ int32_t ValueTableOpLogMeta::InitGetUptoClock(int32_t clock) {
   heap_walker_ = 0;
   clock_to_clear_ = clock;
   heap_last_ = (heap_size_) > 0 ? heap_size_ - 1 : -1;
-  //LOG(INFO) << __func__ << " heap_size = " << heap_size_;
+  // LOG(INFO) << __func__ << " heap_size = " << heap_size_;
   return GetAndClearNextUptoClock();
 }
-
 
 int32_t ValueTableOpLogMeta::GetAndClearNextUptoClock() {
   while (heap_walker_ <= heap_last_) {
@@ -179,12 +170,12 @@ int32_t ValueTableOpLogMeta::GetAndClearNextUptoClock() {
           }
           int32_t copy_to = heap_check + 1;
 
-          memmove(heap_.data() + copy_to,
-                  heap_.data() + heap_valid,
+          memmove(heap_.data() + copy_to, heap_.data() + heap_valid,
                   (heap_last_ - heap_valid + 1) * sizeof(IndexRowOpLogMeta));
 
           heap_last_ -= (heap_valid - copy_to);
-          if (heap_check < 0) break;
+          if (heap_check < 0)
+            break;
         }
       } else {
       }
@@ -208,8 +199,5 @@ int32_t ValueTableOpLogMeta::GetAndClearNextUptoClock() {
   return row_id;
 }
 
-size_t ValueTableOpLogMeta::GetNumRowOpLogs() const {
-  return heap_size_;
-}
-
+size_t ValueTableOpLogMeta::GetNumRowOpLogs() const { return heap_size_; }
 }

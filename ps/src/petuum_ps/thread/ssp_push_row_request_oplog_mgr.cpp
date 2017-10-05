@@ -7,13 +7,14 @@
 namespace petuum {
 
 bool SSPPushRowRequestOpLogMgr::AddRowRequest(RowRequestInfo &request,
-  int32_t table_id, int32_t row_id) {
+                                              int32_t table_id,
+                                              int32_t row_id) {
   request.sent = true;
 
   std::pair<int32_t, int32_t> request_key(table_id, row_id);
   if (pending_row_requests_.count(request_key) == 0) {
-    pending_row_requests_.insert(std::make_pair(request_key,
-      std::list<RowRequestInfo>()));
+    pending_row_requests_.insert(
+        std::make_pair(request_key, std::list<RowRequestInfo>()));
   }
   std::list<RowRequestInfo> &request_list = pending_row_requests_[request_key];
   bool request_added = false;
@@ -37,8 +38,10 @@ bool SSPPushRowRequestOpLogMgr::AddRowRequest(RowRequestInfo &request,
   return request.sent;
 }
 
-int32_t SSPPushRowRequestOpLogMgr::InformReply(int32_t table_id, int32_t row_id,
-  int32_t clock, uint32_t curr_version, std::vector<int32_t> *app_thread_ids) {
+int32_t
+SSPPushRowRequestOpLogMgr::InformReply(int32_t table_id, int32_t row_id,
+                                       int32_t clock, uint32_t curr_version,
+                                       std::vector<int32_t> *app_thread_ids) {
   (*app_thread_ids).clear();
   std::pair<int32_t, int32_t> request_key(table_id, row_id);
   std::list<RowRequestInfo> &request_list = pending_row_requests_[request_key];
@@ -52,8 +55,8 @@ int32_t SSPPushRowRequestOpLogMgr::InformReply(int32_t table_id, int32_t row_id,
       request_list.pop_front();
     } else {
       if (!request.sent) {
-	clock_to_request = request.clock;
-	request.sent = true;
+        clock_to_request = request.clock;
+        request.sent = true;
       }
       break;
     }
@@ -66,14 +69,14 @@ int32_t SSPPushRowRequestOpLogMgr::InformReply(int32_t table_id, int32_t row_id,
 
 // version number monotonically increases
 bool SSPPushRowRequestOpLogMgr::AddOpLog(uint32_t version, BgOpLog *oplog) {
-  version_oplog_list_.push_back(std::pair<uint32_t, BgOpLog*>(version, oplog));
+  version_oplog_list_.push_back(std::pair<uint32_t, BgOpLog *>(version, oplog));
   return true;
 }
 
 BgOpLog *SSPPushRowRequestOpLogMgr::GetOpLog(uint32_t version) {
   for (auto iter = version_oplog_list_.cbegin();
        iter != version_oplog_list_.cend(); iter++) {
-    if(iter->first == version)
+    if (iter->first == version)
       return iter->second;
   }
   LOG(FATAL) << "OpLog not found! version = " << version;
@@ -99,30 +102,29 @@ void SSPPushRowRequestOpLogMgr::ServerAcknowledgeVersion(int32_t server_id,
   uint32_t version_upper_bound = server_version_mgr_.GetVersionUpperBound();
 
   do {
-    std::pair<uint32_t, BgOpLog*> &version_oplog = version_oplog_list_.front();
+    std::pair<uint32_t, BgOpLog *> &version_oplog = version_oplog_list_.front();
     if (version_to_remove > version_upper_bound) {
-      if (version_oplog.first > version_upper_bound
-	  && version_oplog.first <= version_to_remove) {
-	delete version_oplog.second;
-	version_oplog_list_.pop_front();
+      if (version_oplog.first > version_upper_bound &&
+          version_oplog.first <= version_to_remove) {
+        delete version_oplog.second;
+        version_oplog_list_.pop_front();
       } else {
-	break;
+        break;
       }
     } else {
       if (version_oplog.first > version_upper_bound) {
-	delete version_oplog.second;
-	version_oplog_list_.pop_front();
+        delete version_oplog.second;
+        version_oplog_list_.pop_front();
       } else if (version_oplog.first <= version_to_remove) {
-	delete version_oplog.second;
-	version_oplog_list_.pop_front();
+        delete version_oplog.second;
+        version_oplog_list_.pop_front();
       } else {
-	break;
+        break;
       }
     }
     if (version_oplog_list_.empty())
       break;
   } while (1);
-
 }
 
 BgOpLog *SSPPushRowRequestOpLogMgr::OpLogIterInit(uint32_t start_version,
@@ -131,18 +133,17 @@ BgOpLog *SSPPushRowRequestOpLogMgr::OpLogIterInit(uint32_t start_version,
   oplog_iter_version_end_ = end_version;
   oplog_iter_version_next_ = oplog_iter_version_st_ + 1;
 
-
   for (oplog_iter_ = version_oplog_list_.cbegin();
        oplog_iter_ != version_oplog_list_.cend(); oplog_iter_++) {
-    if(oplog_iter_->first == oplog_iter_version_st_) {
+    if (oplog_iter_->first == oplog_iter_version_st_) {
       return oplog_iter_->second;
     }
   }
 
   LOG(FATAL) << "OpLog not found! version = " << start_version
-	     << " end version = " << end_version
-	     << " version_oplog_list_.size() = " << version_oplog_list_.size()
-	     << " client id = " << GlobalContext::get_client_id();
+             << " end version = " << end_version
+             << " version_oplog_list_.size() = " << version_oplog_list_.size()
+             << " client id = " << GlobalContext::get_client_id();
   return 0;
 }
 
@@ -158,4 +159,4 @@ BgOpLog *SSPPushRowRequestOpLogMgr::OpLogIterNext(uint32_t *version) {
   return oplog_iter_->second;
 }
 
-}  // namespace petuum
+} // namespace petuum

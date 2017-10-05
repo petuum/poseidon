@@ -3,11 +3,10 @@
 
 namespace petuum {
 
-VectorClockMT::VectorClockMT():
-  VectorClock(){}
+VectorClockMT::VectorClockMT() : VectorClock() {}
 
-VectorClockMT::VectorClockMT(const std::vector<int32_t>& ids) :
-  VectorClock(ids) { }
+VectorClockMT::VectorClockMT(const std::vector<int32_t> &ids)
+    : VectorClock(ids) {}
 
 void VectorClockMT::AddClock(int32_t id, int32_t clock) {
   std::unique_lock<SharedMutex> write_lock(mutex_);
@@ -34,4 +33,4 @@ int32_t VectorClockMT::get_min_clock() const {
   return VectorClock::get_min_clock();
 }
 
-}  // namespace petuum
+} // namespace petuum

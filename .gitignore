@@ -1,0 +1,4 @@
+.build_release/
+build
+compile_commands.json
+.localvimrc

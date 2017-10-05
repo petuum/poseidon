@@ -21,9 +21,9 @@ namespace petuum {
 class SSPBgWorker : public AbstractBgWorker {
 public:
   SSPBgWorker(int32_t id, int32_t comm_channel_idx,
-           std::map<int32_t, ClientTable* > *tables,
-           pthread_barrier_t *init_barrier,
-           pthread_barrier_t *create_table_barrier);
+              std::map<int32_t, ClientTable *> *tables,
+              pthread_barrier_t *init_barrier,
+              pthread_barrier_t *create_table_barrier);
   virtual ~SSPBgWorker();
 
 protected:
@@ -45,25 +45,26 @@ protected:
   /* Handles Sending OpLogs -- BEGIN */
   virtual BgOpLog *PrepareOpLogsToSend();
 
-  virtual BgOpLogPartition *PrepareOpLogsNormal(int32_t table_id, ClientTable *table);
-  virtual BgOpLogPartition *PrepareOpLogsAppendOnly(int32_t table_id, ClientTable *table);
+  virtual BgOpLogPartition *PrepareOpLogsNormal(int32_t table_id,
+                                                ClientTable *table);
+  virtual BgOpLogPartition *PrepareOpLogsAppendOnly(int32_t table_id,
+                                                    ClientTable *table);
 
-  virtual void PrepareOpLogsNormalNoReplay(int32_t table_id, ClientTable *table);
-  virtual void PrepareOpLogsAppendOnlyNoReplay(int32_t table_id, ClientTable *table);
+  virtual void PrepareOpLogsNormalNoReplay(int32_t table_id,
+                                           ClientTable *table);
+  virtual void PrepareOpLogsAppendOnlyNoReplay(int32_t table_id,
+                                               ClientTable *table);
 
   void TrackBgOpLog(BgOpLog *bg_oplog);
   /* Handles Sending OpLogs -- END */
 
   /* Handles Row Requests -- BEGIN */
-  void CheckAndApplyOldOpLogsToRowData(int32_t table_id,
-                                       int32_t row_id, uint32_t row_version,
+  void CheckAndApplyOldOpLogsToRowData(int32_t table_id, int32_t row_id,
+                                       uint32_t row_version,
                                        AbstractRow *row_data);
-  void ApplyOldOpLogsToRowData(int32_t table_id,
-                               int32_t row_id,
-                               uint32_t version_st,
-                               uint32_t version_end,
+  void ApplyOldOpLogsToRowData(int32_t table_id, int32_t row_id,
+                               uint32_t version_st, uint32_t version_end,
                                AbstractRow *row_data);
   /* Handles Row Requests -- END */
 };
-
 }

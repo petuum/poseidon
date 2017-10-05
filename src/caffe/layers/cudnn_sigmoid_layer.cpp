@@ -8,9 +8,10 @@
 namespace caffe {
 
 template <typename Dtype>
-void CuDNNSigmoidLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-    vector<Blob<Dtype>*>* top, const bool init_ps, int* num_tables,
-    map<string, vector<int> >* layer_name_to_blob_global_idx) {
+void CuDNNSigmoidLayer<Dtype>::LayerSetUp(
+    const vector<Blob<Dtype> *> &bottom, vector<Blob<Dtype> *> *top,
+    const bool init_ps, int *num_tables,
+    map<string, vector<int>> *layer_name_to_blob_global_idx) {
   SigmoidLayer<Dtype>::LayerSetUp(bottom, top);
   // initialize cuDNN
   CUDNN_CHECK(cudnnCreate(&handle_));
@@ -20,8 +21,8 @@ void CuDNNSigmoidLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-void CuDNNSigmoidLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top) {
+void CuDNNSigmoidLayer<Dtype>::Reshape(const vector<Blob<Dtype> *> &bottom,
+                                       vector<Blob<Dtype> *> *top) {
   SigmoidLayer<Dtype>::Reshape(bottom, top);
   const int N = bottom[0]->num();
   const int K = bottom[0]->channels();
@@ -31,10 +32,11 @@ void CuDNNSigmoidLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   cudnn::setTensor4dDesc<Dtype>(&top_desc_, N, K, H, W);
 }
 
-template <typename Dtype>
-CuDNNSigmoidLayer<Dtype>::~CuDNNSigmoidLayer() {
+template <typename Dtype> CuDNNSigmoidLayer<Dtype>::~CuDNNSigmoidLayer() {
   // Check that handles have been setup before destroying
-  if (!handles_setup_) { return; }
+  if (!handles_setup_) {
+    return;
+  }
   cudnnDestroyTensorDescriptor(this->bottom_desc_);
   cudnnDestroyTensorDescriptor(this->top_desc_);
   cudnnDestroy(this->handle_);
@@ -42,5 +44,5 @@ CuDNNSigmoidLayer<Dtype>::~CuDNNSigmoidLayer() {
 
 INSTANTIATE_CLASS(CuDNNSigmoidLayer);
 
-}  // namespace caffe
+} // namespace caffe
 #endif

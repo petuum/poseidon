@@ -5,29 +5,25 @@
 namespace petuum {
 class Thread {
 public:
-  Thread() { }
+  Thread() {}
 
-  virtual ~Thread() { }
+  virtual ~Thread() {}
 
-  virtual void *operator() () {
-    return 0;
-  }
+  virtual void *operator()() { return 0; }
 
   int Start() {
     InitWhenStart();
     return pthread_create(&thr_, NULL, InternalStart, this);
   }
 
-  void Join() {
-    pthread_join(thr_, NULL);
-  }
+  void Join() { pthread_join(thr_, NULL); }
 
 protected:
-  virtual void InitWhenStart() { }
+  virtual void InitWhenStart() {}
 
 private:
   static void *InternalStart(void *thread) {
-    Thread *t = reinterpret_cast<Thread*>(thread);
+    Thread *t = reinterpret_cast<Thread *>(thread);
     return t->operator()();
   }
 

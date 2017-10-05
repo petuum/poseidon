@@ -6,19 +6,17 @@
 
 namespace petuum {
 
-template<typename V>
-using DenseRowCore  = NumericStoreRow<VectorStore, V >;
+template <typename V> using DenseRowCore = NumericStoreRow<VectorStore, V>;
 
-//template<typename V>
-//using DenseRowCore  = NumericStoreRow<VectorStore, V, NSCountImplCalc>;
+// template<typename V>
+// using DenseRowCore  = NumericStoreRow<VectorStore, V, NSCountImplCalc>;
 
-template<typename V>
-class DenseRow : public DenseRowCore<V> {
+template <typename V> class DenseRow : public DenseRowCore<V> {
 public:
-  DenseRow() { }
-  ~DenseRow() { }
+  DenseRow() {}
+  ~DenseRow() {}
 
-  V operator [](int32_t col_id) const {
+  V operator[](int32_t col_id) const {
     std::unique_lock<std::mutex> lock(DenseRowCore<V>::mtx_);
     return DenseRowCore<V>::store_.Get(col_id);
   }
@@ -39,5 +37,4 @@ public:
     return DenseRowCore<V>::store_.GetDataPtr();
   }
 };
-
 }

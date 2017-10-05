@@ -8,12 +8,12 @@
 
 #include <cmath>
 #include <fstream>  // NOLINT(readability/streams)
-#include <iostream>  // NOLINT(readability/streams)
+#include <iostream> // NOLINT(readability/streams)
 #include <map>
 #include <set>
 #include <sstream>
 #include <string>
-#include <utility>  // pair
+#include <utility> // pair
 #include <vector>
 
 #include "caffe/util/device_alternate.hpp"
@@ -25,17 +25,17 @@
 // remove the following hack.
 #ifndef GFLAGS_GFLAGS_H_
 namespace gflags = google;
-#endif  // GFLAGS_GFLAGS_H_
+#endif // GFLAGS_GFLAGS_H_
 
 // Disable the copy and assignment operator for a class.
-#define DISABLE_COPY_AND_ASSIGN(classname) \
-private:\
-  classname(const classname&);\
-  classname& operator=(const classname&)
+#define DISABLE_COPY_AND_ASSIGN(classname)                                     \
+private:                                                                       \
+  classname(const classname &);                                                \
+  classname &operator=(const classname &)
 
 // Instantiate a class with float and double specifications.
-#define INSTANTIATE_CLASS(classname) \
-  template class classname<float>; \
+#define INSTANTIATE_CLASS(classname)                                           \
+  template class classname<float>;                                             \
   template class classname<double>
 
 // A simple macro to mark codes that are not implemented, so that when the code
@@ -71,14 +71,14 @@ const int kColIdxOutputTableLoss = 2;
 
 // A global initialization function that you should call in your main function.
 // Currently it initializes google flags and google logging.
-void GlobalInit(int* pargc, char*** pargv);
+void GlobalInit(int *pargc, char ***pargv);
 
 // A singleton class to hold common caffe stuff, such as the handler that
 // caffe is going to use for cublas, curand, etc.
 class Caffe {
- public:
+public:
   ~Caffe();
-  inline static Caffe& Get() {
+  inline static Caffe &Get() {
     if (!singleton_.get()) {
       singleton_.reset(new Caffe());
     }
@@ -87,23 +87,23 @@ class Caffe {
   enum Brew { CPU, GPU };
   enum Phase { TRAIN, TEST };
 
-
   // This random number generator facade hides boost and CUDA rng
   // implementation from one another (for cross-platform compatibility).
   class RNG {
-   public:
+  public:
     RNG();
     explicit RNG(unsigned int seed);
-    explicit RNG(const RNG&);
-    RNG& operator=(const RNG&);
-    void* generator();
-   private:
+    explicit RNG(const RNG &);
+    RNG &operator=(const RNG &);
+    void *generator();
+
+  private:
     class Generator;
     shared_ptr<Generator> generator_;
   };
 
   // Getters for boost rng, curand, and cublas handles
-  inline static RNG& rng_stream() {
+  inline static RNG &rng_stream() {
     Get().random_generator_mutext_.lock();
     if (!Get().random_generator_) {
       Get().random_generator_.reset(new RNG());
@@ -113,11 +113,11 @@ class Caffe {
   }
 #ifndef CPU_ONLY
   inline static cublasHandle_t cublas_handle(const int device_id) {
-    CHECK_EQ(Get().cublas_handle_.count(device_id),1); 
+    CHECK_EQ(Get().cublas_handle_.count(device_id), 1);
     return Get().cublas_handle_[device_id];
   }
   inline static curandGenerator_t curand_generator(const int device_id) {
-    CHECK_EQ(Get().curand_generator_.count(device_id),1);
+    CHECK_EQ(Get().curand_generator_.count(device_id), 1);
     return Get().curand_generator_[device_id];
   }
 
@@ -126,9 +126,9 @@ class Caffe {
   // Returns the mode: running on CPU or GPU.
   inline static Brew mode() { return Get().mode_; }
   // Returns the phase: TRAIN or TEST.
-  inline static Phase phase(const int thread_id) { 
+  inline static Phase phase(const int thread_id) {
     CHECK(Get().phases_ != NULL);
-    return Get().phases_[thread_id]; 
+    return Get().phases_[thread_id];
   }
   // The setters for the variables
   // Sets the mode. It is recommended that you don't change the mode halfway
@@ -136,8 +136,8 @@ class Caffe {
   // freed in a non-pinned way, which may cause problems - I haven't verified
   // it personally but better to note it here in the header file.
   inline static void set_mode(Brew mode) { Get().mode_ = mode; }
-  inline static void initialize_phases(const int num_threads) { 
-    Get().phases_ = new Phase[num_threads]; 
+  inline static void initialize_phases(const int num_threads) {
+    Get().phases_ = new Phase[num_threads];
     for (int tidx = 0; tidx < num_threads; ++tidx) {
       set_phase(Caffe::TRAIN, tidx);
     }
@@ -145,7 +145,7 @@ class Caffe {
   // Sets the phase.
   inline static void set_phase(Phase phase, const int thread_id) {
     CHECK(Get().phases_ != NULL);
-    Get().phases_[thread_id] = phase; 
+    Get().phases_[thread_id] = phase;
   }
   // Sets the random seed of both boost and curand
   static void set_random_seed(const unsigned int seed);
@@ -155,46 +155,47 @@ class Caffe {
   // Prints the current GPU status.
   static void DeviceQuery();
 
-  //get the binded device id for current thread
+  // get the binded device id for current thread
   static int GetDeviceId();
 
-  //get the device id given the thread id
+  // get the device id given the thread id
   static int GetDeviceId(const int thread_id);
 
-  //initialization
-  static void InitDevices(const std::vector<int> &device_ids, const int num_app_threads);
+  // initialization
+  static void InitDevices(const std::vector<int> &device_ids,
+                          const int num_app_threads);
   static void InitDevice(const int device_id);
 
-  //Get all active devices
-  static const vector<int>& GetActiveDevices();
+  // Get all active devices
+  static const vector<int> &GetActiveDevices();
 
   static void SyncDevice();
 
- protected:
+protected:
 #ifndef CPU_ONLY
-  //device_id->cublas handle
-  map<int,cublasHandle_t> cublas_handle_;
-  //device_id->curandgenerator
-  map<int,curandGenerator_t> curand_generator_;
+  // device_id->cublas handle
+  map<int, cublasHandle_t> cublas_handle_;
+  // device_id->curandgenerator
+  map<int, curandGenerator_t> curand_generator_;
 #endif
-  vector<int> device_ids_; //devices
-  map<int, int> threads_devices_; //thread id -> device id
+  vector<int> device_ids_; // devices
+  map<int, int> threads_devices_; // thread id -> device id
 
   boost::mutex random_generator_mutext_;
 
   shared_ptr<RNG> random_generator_;
 
   Brew mode_;
-  Phase* phases_;
+  Phase *phases_;
   static shared_ptr<Caffe> singleton_;
 
- private:
+private:
   // The private constructor to avoid duplicate instantiation.
   Caffe();
 
   DISABLE_COPY_AND_ASSIGN(Caffe);
 };
 
-}  // namespace caffe
+} // namespace caffe
 
-#endif  // CAFFE_COMMON_HPP_
+#endif // CAFFE_COMMON_HPP_

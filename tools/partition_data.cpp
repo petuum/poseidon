@@ -57,34 +57,34 @@ int main(int argc, char** argv) {
     options.create_if_missing = false;
 
     LOG(INFO) << "Opening leveldb " << db_path;
-    leveldb::Status status = leveldb::DB::Open(
-        options, db_path, &db);
+    leveldb::Status status = leveldb::DB::Open(options, db_path, &db);
     CHECK(status.ok()) << "Failed to open leveldb " << db_path;
 
     // Create new dbs
     leveldb::Options new_options;
     new_options.error_if_exists = true;
     new_options.create_if_missing = true;
-    new_options.write_buffer_size = 268435456;
+    new_options.write_buffer_size = 1024*1024;
     leveldb::WriteBatch *batch[num_partitions];
     leveldb::DB *new_db[num_partitions];
+
     char pid_str[50];
     for (int pidx = 0; pidx < num_partitions; ++pidx) {
       snprintf(pid_str, 50, "_%d", pidx);
       const char* new_db_path = (string(db_path) + pid_str).c_str();
-      leveldb::Status status = leveldb::DB::Open(
-          new_options, new_db_path, &(new_db[pidx]));
-      CHECK(status.ok()) << "Failed to open leveldb " << new_db_path
-          << ". Is it already existing?";
+      std::cout << "New DB path=" << new_db_path << std::endl;
+      leveldb::Status status = leveldb::DB::Open(new_options, new_db_path, &(new_db[pidx]));
+      CHECK(status.ok()) << "Failed to open leveldb " << new_db_path << ". Is it already existing?";
       batch[pidx] = new leveldb::WriteBatch();
     }
-     
-    leveldb::Iterator* iter
-      = db->NewIterator(leveldb::ReadOptions());
+
+    leveldb::Iterator* iter = db->NewIterator(leveldb::ReadOptions());
     iter->SeekToFirst();
-    
+
     int num_it = 0, count = 0;
+
     while (iter->Valid()) {
+      // add records to the partition in a round-robin fashion
       for (int pidx = 0; pidx < num_partitions; ++pidx) {
         batch[pidx]->Put(iter->key().ToString(), iter->value().ToString());
         count++;
@@ -93,7 +93,9 @@ int main(int argc, char** argv) {
           break;
         }
       }
+
       num_it++;
+
       if (num_it % 1000 == 0 || !iter->Valid()) {
         for (int pidx = 0; pidx < num_partitions; ++pidx) {
           new_db[pidx]->Write(leveldb::WriteOptions(), batch[pidx]);
@@ -101,16 +103,14 @@ int main(int argc, char** argv) {
           batch[pidx] = new leveldb::WriteBatch();
         }
         if (num_it % 1000 == 0) {
-          std::cout << "Processed " << (num_it * num_partitions) 
-              << " files. " << std::endl;
+          std::cout << "Processed " << (num_it * num_partitions) << " files. " << std::endl;
         } else {
-          std::cout << "Processed " << count
-              << " files. " << std::endl;
+          std::cout << "Processed " << count << " files. " << std::endl;
           std::cout << "Done." << std::endl;
         }
       }
     }
-    
+
     delete db;
     for (int pidx = 0; pidx < num_partitions; ++pidx) {
       delete new_db[pidx];

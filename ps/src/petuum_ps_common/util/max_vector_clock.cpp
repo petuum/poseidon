@@ -2,7 +2,7 @@
 
 namespace petuum {
 
-MaxVectorClock::MaxVectorClock() { }
+MaxVectorClock::MaxVectorClock() {}
 
 void MaxVectorClock::AddClock(int32_t id, int32_t clock) {
   vec_clock_[id] = clock;
@@ -19,8 +19,7 @@ bool MaxVectorClock::TickUntil(int32_t id, int32_t clock) {
   return true;
 }
 
-int32_t MaxVectorClock::get_clock(int32_t id) const
-{
+int32_t MaxVectorClock::get_clock(int32_t id) const {
   auto iter = vec_clock_.find(id);
   CHECK(iter != vec_clock_.end()) << "id = " << id;
   return iter->second;
@@ -46,4 +45,4 @@ bool MaxVectorClock::IsUniqueMax(int32_t clock) {
   return true;
 }
 
-}  // namespace petuum
+} // namespace petuum

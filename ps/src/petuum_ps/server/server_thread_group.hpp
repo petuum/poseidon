@@ -11,9 +11,9 @@ public:
 
   void Start();
   void ShutDown();
+
 private:
-  std::vector<ServerThread*> server_thread_vec_;
+  std::vector<ServerThread *> server_thread_vec_;
   pthread_barrier_t init_barrier_;
 };
-
 }

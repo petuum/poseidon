@@ -7,20 +7,20 @@
 namespace petuum {
 
 bool SSPRowRequestOpLogMgr::AddRowRequest(RowRequestInfo &request,
-  int32_t table_id, int32_t row_id) {
+                                          int32_t table_id, int32_t row_id) {
   uint32_t version = request.version;
   request.sent = true;
 
   {
     std::pair<int32_t, int32_t> request_key(table_id, row_id);
     if (pending_row_requests_.count(request_key) == 0) {
-      pending_row_requests_.insert(std::make_pair(request_key,
-        std::list<RowRequestInfo>()));
+      pending_row_requests_.insert(
+          std::make_pair(request_key, std::list<RowRequestInfo>()));
       VLOG(0) << "pending row requests does not have this table_id = "
-	      << table_id << " row_id = " << row_id;
+              << table_id << " row_id = " << row_id;
     }
-    std::list<RowRequestInfo> &request_list
-      = pending_row_requests_[request_key];
+    std::list<RowRequestInfo> &request_list =
+        pending_row_requests_[request_key];
     bool request_added = false;
     // Requests are sorted in increasing order of clock number.
     // When a request is to be inserted, start from the end as the requst's
@@ -29,11 +29,11 @@ bool SSPRowRequestOpLogMgr::AddRowRequest(RowRequestInfo &request,
       auto iter_prev = std::prev(iter);
       int32_t clock = request.clock;
       if (clock >= iter_prev->clock) {
-	VLOG(0) << "I'm requesting clock is " << clock
-		<< " There's a previous request requesting clock "
-		<< iter_prev->clock;
+        VLOG(0) << "I'm requesting clock is " << clock
+                << " There's a previous request requesting clock "
+                << iter_prev->clock;
         // insert before iter
-	request.sent = false;
+        request.sent = false;
         request_list.insert(iter, request);
         request_added = true;
         break;
@@ -53,8 +53,10 @@ bool SSPRowRequestOpLogMgr::AddRowRequest(RowRequestInfo &request,
   return request.sent;
 }
 
-int32_t SSPRowRequestOpLogMgr::InformReply(int32_t table_id, int32_t row_id,
-  int32_t clock, uint32_t curr_version, std::vector<int32_t> *app_thread_ids) {
+int32_t
+SSPRowRequestOpLogMgr::InformReply(int32_t table_id, int32_t row_id,
+                                   int32_t clock, uint32_t curr_version,
+                                   std::vector<int32_t> *app_thread_ids) {
   (*app_thread_ids).clear();
   std::pair<int32_t, int32_t> request_key(table_id, row_id);
   std::list<RowRequestInfo> &request_list = pending_row_requests_[request_key];
@@ -74,25 +76,25 @@ int32_t SSPRowRequestOpLogMgr::InformReply(int32_t table_id, int32_t row_id,
       // if version count becomes 0, remove the count
       if (version_request_cnt_map_[req_version] == 0) {
         version_request_cnt_map_.erase(req_version);
-	CleanVersionOpLogs(req_version, curr_version);
+        CleanVersionOpLogs(req_version, curr_version);
       }
     } else {
       if (!request.sent) {
-	clock_to_request = request.clock;
-	request.sent = true;
-	uint32_t req_version = request.version;
-	--version_request_cnt_map_[req_version];
+        clock_to_request = request.clock;
+        request.sent = true;
+        uint32_t req_version = request.version;
+        --version_request_cnt_map_[req_version];
 
-	request.version = curr_version - 1;
-	if (version_request_cnt_map_.count(request.version) == 0) {
-	  version_request_cnt_map_[request.version] = 0;
-	}
-	++version_request_cnt_map_[request.version];
+        request.version = curr_version - 1;
+        if (version_request_cnt_map_.count(request.version) == 0) {
+          version_request_cnt_map_[request.version] = 0;
+        }
+        ++version_request_cnt_map_[request.version];
 
-	if (version_request_cnt_map_[req_version] == 0) {
-	  version_request_cnt_map_.erase(req_version);
-	  CleanVersionOpLogs(req_version, curr_version);
-	}
+        if (version_request_cnt_map_[req_version] == 0) {
+          version_request_cnt_map_.erase(req_version);
+          CleanVersionOpLogs(req_version, curr_version);
+        }
       }
       break;
     }
@@ -104,10 +106,10 @@ int32_t SSPRowRequestOpLogMgr::InformReply(int32_t table_id, int32_t row_id,
 }
 
 bool SSPRowRequestOpLogMgr::AddOpLog(uint32_t version, BgOpLog *oplog) {
-  CHECK_EQ(version_oplog_map_.count(version), (size_t) 0)
-     << "version number has wrapped"
-     << " around, the system does not know how to deal with it. "
-     << " Maybe use a larger version number size?";
+  CHECK_EQ(version_oplog_map_.count(version), (size_t)0)
+      << "version number has wrapped"
+      << " around, the system does not know how to deal with it. "
+      << " Maybe use a larger version number size?";
   // There are pending requests, they are from some older version or the current
   // version, so I need to save the oplog for them.
   if (version_request_cnt_map_.size() > 0) {
@@ -124,7 +126,7 @@ BgOpLog *SSPRowRequestOpLogMgr::GetOpLog(uint32_t version) {
 }
 
 void SSPRowRequestOpLogMgr::CleanVersionOpLogs(uint32_t req_version,
-  uint32_t curr_version) {
+                                               uint32_t curr_version) {
 
   // All oplogs that are saved must be of an earlier version than current
   // version, while a request could be from the current version.
@@ -147,18 +149,17 @@ void SSPRowRequestOpLogMgr::CleanVersionOpLogs(uint32_t req_version,
     version_oplog_map_.erase(version_to_remove + 1);
     ++version_to_remove;
     // Figure out how many later versions of oplogs can be removed.
-  } while((version_request_cnt_map_.count(version_to_remove) == 0)
-    && (version_to_remove != curr_version));
+  } while ((version_request_cnt_map_.count(version_to_remove) == 0) &&
+           (version_to_remove != curr_version));
 }
 
 BgOpLog *SSPRowRequestOpLogMgr::OpLogIterInit(uint32_t start_version,
-  uint32_t end_version) {
+                                              uint32_t end_version) {
   oplog_iter_version_st_ = start_version;
   oplog_iter_version_end_ = end_version;
   oplog_iter_version_next_ = oplog_iter_version_st_ + 1;
   return GetOpLog(start_version);
 }
-
 
 BgOpLog *SSPRowRequestOpLogMgr::OpLogIterNext(uint32_t *version) {
   if (oplog_iter_version_next_ > oplog_iter_version_end_)
@@ -168,5 +169,4 @@ BgOpLog *SSPRowRequestOpLogMgr::OpLogIterNext(uint32_t *version) {
   return GetOpLog(*version);
 }
 
-
-}  // namespace petuum
+} // namespace petuum

@@ -26,9 +26,8 @@ namespace petuum {
 class SSPClientRow : public ClientRow {
 public:
   // ClientRow takes ownership of row_data.
-  SSPClientRow(int32_t clock, AbstractRow* row_data, bool use_ref_count):
-      ClientRow(clock, row_data, use_ref_count),
-      clock_(clock){ }
+  SSPClientRow(int32_t clock, AbstractRow *row_data, bool use_ref_count)
+      : ClientRow(clock, row_data, use_ref_count), clock_(clock) {}
 
   void SetClock(int32_t clock) {
     std::unique_lock<std::mutex> ulock(clock_mtx_);
@@ -40,9 +39,9 @@ public:
     return clock_;
   }
 
-private:  // private members
+private: // private members
   mutable std::mutex clock_mtx_;
   int32_t clock_;
 };
 
-}  // namespace petuum
+} // namespace petuum

@@ -23,17 +23,14 @@ public:
     InitMsg();
   }
 
-  explicit ClientConnectMsg(void *msg):
-    NumberedMsg(msg) {}
+  explicit ClientConnectMsg(void *msg) : NumberedMsg(msg) {}
 
   int32_t &get_client_id() {
-    return *(reinterpret_cast<int32_t*>(mem_.get_mem()
-      + NumberedMsg::get_size()));
+    return *(reinterpret_cast<int32_t *>(mem_.get_mem() +
+                                         NumberedMsg::get_size()));
   }
 
-  size_t get_size() {
-    return NumberedMsg::get_size() + sizeof(int32_t);
-  }
+  size_t get_size() { return NumberedMsg::get_size() + sizeof(int32_t); }
 
 protected:
   void InitMsg() {
@@ -57,8 +54,7 @@ public:
     InitMsg();
   }
 
-  explicit ServerConnectMsg(void *msg):
-    NumberedMsg(msg) {}
+  explicit ServerConnectMsg(void *msg) : NumberedMsg(msg) {}
 
 protected:
   void InitMsg() {
@@ -82,8 +78,7 @@ public:
     InitMsg();
   }
 
-  explicit AppConnectMsg(void *msg):
-    NumberedMsg(msg) {}
+  explicit AppConnectMsg(void *msg) : NumberedMsg(msg) {}
 
 protected:
   void InitMsg() {
@@ -107,23 +102,21 @@ public:
     InitMsg();
   }
 
-  explicit BgCreateTableMsg(void *msg):
-    NumberedMsg(msg) {}
+  explicit BgCreateTableMsg(void *msg) : NumberedMsg(msg) {}
 
   size_t get_size() {
-    return NumberedMsg::get_size() + sizeof(int32_t)
-        + sizeof(ClientTableConfig);
+    return NumberedMsg::get_size() + sizeof(int32_t) +
+           sizeof(ClientTableConfig);
   }
 
   int32_t &get_table_id() {
-    return *(reinterpret_cast<int32_t*>(mem_.get_mem()
-      + NumberedMsg::get_size()));
+    return *(reinterpret_cast<int32_t *>(mem_.get_mem() +
+                                         NumberedMsg::get_size()));
   }
 
   ClientTableConfig &get_client_table_config() {
-    return *(reinterpret_cast<ClientTableConfig*>(
-        mem_.get_mem() + sizeof(int32_t)
-        + NumberedMsg::get_size()));
+    return *(reinterpret_cast<ClientTableConfig *>(
+        mem_.get_mem() + sizeof(int32_t) + NumberedMsg::get_size()));
   }
 
 protected:
@@ -144,27 +137,24 @@ public:
       own_mem_ = false;
       use_stack_buff_ = true;
       mem_.Reset(stack_buff_);
-     }
-     InitMsg();
+    }
+    InitMsg();
   }
 
-  explicit CreateTableMsg(void *msg):
-    NumberedMsg(msg) {}
+  explicit CreateTableMsg(void *msg) : NumberedMsg(msg) {}
 
   size_t get_size() {
-    return NumberedMsg::get_size() + sizeof(int32_t)
-        + sizeof(TableInfo);
+    return NumberedMsg::get_size() + sizeof(int32_t) + sizeof(TableInfo);
   }
 
   int32_t &get_table_id() {
-    return *(reinterpret_cast<int32_t*>(mem_.get_mem()
-                                        + NumberedMsg::get_size()));
+    return *(reinterpret_cast<int32_t *>(mem_.get_mem() +
+                                         NumberedMsg::get_size()));
   }
 
   TableInfo &get_table_info() {
-    return *(reinterpret_cast<TableInfo*>(
-        mem_.get_mem() + NumberedMsg::get_size()
-        + sizeof(int32_t)));
+    return *(reinterpret_cast<TableInfo *>(
+        mem_.get_mem() + NumberedMsg::get_size() + sizeof(int32_t)));
   }
 
 protected:
@@ -181,7 +171,7 @@ public:
       own_mem_ = true;
       use_stack_buff_ = false;
       mem_.Alloc(get_size());
-     } else {
+    } else {
       own_mem_ = false;
       use_stack_buff_ = true;
       mem_.Reset(stack_buff_);
@@ -189,20 +179,17 @@ public:
     InitMsg();
   }
 
-  explicit CreateTableReplyMsg(void *msg):
-    NumberedMsg(msg) {}
+  explicit CreateTableReplyMsg(void *msg) : NumberedMsg(msg) {}
 
-  size_t get_size() {
-    return NumberedMsg::get_size() + sizeof(int32_t);
-  }
+  size_t get_size() { return NumberedMsg::get_size() + sizeof(int32_t); }
 
   int32_t &get_table_id() {
-    return *(reinterpret_cast<int32_t*>(mem_.get_mem()
-      + NumberedMsg::get_size()));
+    return *(reinterpret_cast<int32_t *>(mem_.get_mem() +
+                                         NumberedMsg::get_size()));
   }
 
 protected:
-  void InitMsg(){
+  void InitMsg() {
     NumberedMsg::InitMsg();
     get_msg_type() = kCreateTableReply;
   }
@@ -223,33 +210,33 @@ public:
     InitMsg();
   }
 
-  explicit RowRequestMsg(void *msg):
-    NumberedMsg(msg) {}
+  explicit RowRequestMsg(void *msg) : NumberedMsg(msg) {}
 
   size_t get_size() {
-    return NumberedMsg::get_size() + sizeof(int32_t) + sizeof(int32_t)
-        + sizeof(int32_t) + sizeof(bool);
+    return NumberedMsg::get_size() + sizeof(int32_t) + sizeof(int32_t) +
+           sizeof(int32_t) + sizeof(bool);
   }
 
   int32_t &get_table_id() {
-    return *(reinterpret_cast<int32_t*>(mem_.get_mem()
-      + NumberedMsg::get_size()));
+    return *(reinterpret_cast<int32_t *>(mem_.get_mem() +
+                                         NumberedMsg::get_size()));
   }
 
   int32_t &get_row_id() {
-    return *(reinterpret_cast<int32_t*>(mem_.get_mem()
-      + NumberedMsg::get_size() + sizeof(int32_t)));
+    return *(reinterpret_cast<int32_t *>(
+        mem_.get_mem() + NumberedMsg::get_size() + sizeof(int32_t)));
   }
 
   int32_t &get_clock() {
-    return *(reinterpret_cast<int32_t*>(mem_.get_mem()
-      + NumberedMsg::get_size() + sizeof(int32_t) + sizeof(int32_t)));
+    return *(reinterpret_cast<int32_t *>(mem_.get_mem() +
+                                         NumberedMsg::get_size() +
+                                         sizeof(int32_t) + sizeof(int32_t)));
   }
 
   bool &get_forced_request() {
-    return *(reinterpret_cast<bool*>(
-        mem_.get_mem() + NumberedMsg::get_size() + sizeof(int32_t)
-        + sizeof(int32_t) + sizeof(int32_t)));
+    return *(reinterpret_cast<bool *>(mem_.get_mem() + NumberedMsg::get_size() +
+                                      sizeof(int32_t) + sizeof(int32_t) +
+                                      sizeof(int32_t)));
   }
 
 protected:
@@ -274,12 +261,9 @@ public:
     InitMsg();
   }
 
-  explicit RowRequestReplyMsg(void *msg):
-    NumberedMsg(msg) {}
+  explicit RowRequestReplyMsg(void *msg) : NumberedMsg(msg) {}
 
-  size_t get_size() {
-    return NumberedMsg::get_size();
-  }
+  size_t get_size() { return NumberedMsg::get_size(); }
 
 protected:
   void InitMsg() {
@@ -291,23 +275,22 @@ protected:
 struct CreatedAllTablesMsg : public NumberedMsg {
 public:
   CreatedAllTablesMsg() {
-     if (get_size() > PETUUM_MSG_STACK_BUFF_SIZE) {
-       own_mem_ = true;
-       use_stack_buff_ = false;
-       mem_.Alloc(get_size());
-     } else {
-       own_mem_ = false;
-       use_stack_buff_ = true;
-       mem_.Reset(stack_buff_);
-     }
-     InitMsg();
+    if (get_size() > PETUUM_MSG_STACK_BUFF_SIZE) {
+      own_mem_ = true;
+      use_stack_buff_ = false;
+      mem_.Alloc(get_size());
+    } else {
+      own_mem_ = false;
+      use_stack_buff_ = true;
+      mem_.Reset(stack_buff_);
+    }
+    InitMsg();
   }
 
-  explicit CreatedAllTablesMsg(void *msg):
-    NumberedMsg(msg) {}
+  explicit CreatedAllTablesMsg(void *msg) : NumberedMsg(msg) {}
 
 protected:
-  void InitMsg(){
+  void InitMsg() {
     NumberedMsg::InitMsg();
     get_msg_type() = kCreatedAllTables;
   }
@@ -320,7 +303,7 @@ public:
       own_mem_ = true;
       use_stack_buff_ = false;
       mem_.Alloc(get_size());
-     } else {
+    } else {
       own_mem_ = false;
       use_stack_buff_ = true;
       mem_.Reset(stack_buff_);
@@ -328,8 +311,7 @@ public:
     InitMsg();
   }
 
-  explicit ConnectServerMsg(void *msg):
-    NumberedMsg(msg) {}
+  explicit ConnectServerMsg(void *msg) : NumberedMsg(msg) {}
 
 protected:
   void InitMsg() {
@@ -353,8 +335,7 @@ public:
     InitMsg();
   }
 
-  explicit ClientStartMsg(void *msg):
-    NumberedMsg(msg) {}
+  explicit ClientStartMsg(void *msg) : NumberedMsg(msg) {}
 
 protected:
   void InitMsg() {
@@ -378,8 +359,7 @@ public:
     InitMsg();
   }
 
-  explicit AppThreadDeregMsg(void *msg):
-    NumberedMsg(msg) {}
+  explicit AppThreadDeregMsg(void *msg) : NumberedMsg(msg) {}
 
 protected:
   void InitMsg() {
@@ -403,8 +383,7 @@ public:
     InitMsg();
   }
 
-  explicit ClientShutDownMsg(void *msg):
-    NumberedMsg(msg) {}
+  explicit ClientShutDownMsg(void *msg) : NumberedMsg(msg) {}
 
 protected:
   void InitMsg() {
@@ -428,8 +407,7 @@ public:
     InitMsg();
   }
 
-  explicit ServerShutDownAckMsg(void *msg):
-    NumberedMsg(msg) {}
+  explicit ServerShutDownAckMsg(void *msg) : NumberedMsg(msg) {}
 
 protected:
   void InitMsg() {
@@ -453,16 +431,13 @@ public:
     InitMsg();
   }
 
-  explicit ServerOpLogAckMsg (void *msg):
-  NumberedMsg(msg) { }
+  explicit ServerOpLogAckMsg(void *msg) : NumberedMsg(msg) {}
 
-  size_t get_size() {
-    return NumberedMsg::get_size() + sizeof(uint32_t);
-  }
+  size_t get_size() { return NumberedMsg::get_size() + sizeof(uint32_t); }
 
   uint32_t &get_ack_version() {
-    return *(reinterpret_cast<uint32_t*>(
-        mem_.get_mem() + NumberedMsg::get_size()));
+    return *(reinterpret_cast<uint32_t *>(mem_.get_mem() +
+                                          NumberedMsg::get_size()));
   }
 
 protected:
@@ -487,16 +462,13 @@ public:
     InitMsg();
   }
 
-  explicit BgServerPushRowAckMsg (void *msg):
-  NumberedMsg(msg) { }
+  explicit BgServerPushRowAckMsg(void *msg) : NumberedMsg(msg) {}
 
-  size_t get_size() {
-    return NumberedMsg::get_size() + sizeof(uint32_t);
-  }
+  size_t get_size() { return NumberedMsg::get_size() + sizeof(uint32_t); }
 
   uint32_t &get_ack_version() {
-    return *(reinterpret_cast<uint32_t*>(
-        mem_.get_mem() + NumberedMsg::get_size()));
+    return *(reinterpret_cast<uint32_t *>(mem_.get_mem() +
+                                          NumberedMsg::get_size()));
   }
 
 protected:
@@ -510,9 +482,9 @@ struct BgClockMsg : public NumberedMsg {
 public:
   BgClockMsg() {
     if (get_size() > PETUUM_MSG_STACK_BUFF_SIZE) {
-       own_mem_ = true;
-       use_stack_buff_ = false;
-       mem_.Alloc(get_size());
+      own_mem_ = true;
+      use_stack_buff_ = false;
+      mem_.Alloc(get_size());
     } else {
       own_mem_ = false;
       use_stack_buff_ = true;
@@ -521,8 +493,7 @@ public:
     InitMsg();
   }
 
-  explicit BgClockMsg(void *msg):
-    NumberedMsg(msg) {}
+  explicit BgClockMsg(void *msg) : NumberedMsg(msg) {}
 
 protected:
   void InitMsg() {
@@ -535,9 +506,9 @@ struct BgSendOpLogMsg : public NumberedMsg {
 public:
   BgSendOpLogMsg() {
     if (get_size() > PETUUM_MSG_STACK_BUFF_SIZE) {
-       own_mem_ = true;
-       use_stack_buff_ = false;
-       mem_.Alloc(get_size());
+      own_mem_ = true;
+      use_stack_buff_ = false;
+      mem_.Alloc(get_size());
     } else {
       own_mem_ = false;
       use_stack_buff_ = true;
@@ -546,8 +517,7 @@ public:
     InitMsg();
   }
 
-  explicit BgSendOpLogMsg(void *msg):
-    NumberedMsg(msg) {}
+  explicit BgSendOpLogMsg(void *msg) : NumberedMsg(msg) {}
 
 protected:
   void InitMsg() {
@@ -560,9 +530,9 @@ struct BgHandleAppendOpLogMsg : public NumberedMsg {
 public:
   BgHandleAppendOpLogMsg() {
     if (get_size() > PETUUM_MSG_STACK_BUFF_SIZE) {
-       own_mem_ = true;
-       use_stack_buff_ = false;
-       mem_.Alloc(get_size());
+      own_mem_ = true;
+      use_stack_buff_ = false;
+      mem_.Alloc(get_size());
     } else {
       own_mem_ = false;
       use_stack_buff_ = true;
@@ -571,16 +541,13 @@ public:
     InitMsg();
   }
 
-  explicit BgHandleAppendOpLogMsg(void *msg):
-    NumberedMsg(msg) {}
+  explicit BgHandleAppendOpLogMsg(void *msg) : NumberedMsg(msg) {}
 
-  size_t get_size() {
-    return NumberedMsg::get_size() + sizeof(int32_t);
-  }
+  size_t get_size() { return NumberedMsg::get_size() + sizeof(int32_t); }
 
   int32_t &get_table_id() {
-  return *(reinterpret_cast<int32_t*>(
-      mem_.get_mem() + NumberedMsg::get_size()));
+    return *(reinterpret_cast<int32_t *>(mem_.get_mem() +
+                                         NumberedMsg::get_size()));
   }
 
 protected:
@@ -605,8 +572,7 @@ public:
     InitMsg();
   }
 
-  explicit BgEarlyCommOnMsg(void *msg):
-    NumberedMsg(msg) {}
+  explicit BgEarlyCommOnMsg(void *msg) : NumberedMsg(msg) {}
 
 protected:
   void InitMsg() {
@@ -630,8 +596,7 @@ public:
     InitMsg();
   }
 
-  explicit BgEarlyCommOffMsg(void *msg):
-    NumberedMsg(msg) {}
+  explicit BgEarlyCommOffMsg(void *msg) : NumberedMsg(msg) {}
 
 protected:
   void InitMsg() {
@@ -655,8 +620,7 @@ public:
     InitMsg();
   }
 
-  explicit EarlyCommOnMsg(void *msg):
-    NumberedMsg(msg) {}
+  explicit EarlyCommOnMsg(void *msg) : NumberedMsg(msg) {}
 
 protected:
   void InitMsg() {
@@ -680,8 +644,7 @@ public:
     InitMsg();
   }
 
-  explicit EarlyCommOffMsg(void *msg):
-    NumberedMsg(msg) {}
+  explicit EarlyCommOffMsg(void *msg) : NumberedMsg(msg) {}
 
 protected:
   void InitMsg() {
@@ -705,8 +668,7 @@ public:
     InitMsg();
   }
 
-  explicit AdjustSuppressionLevelMsg(void *msg):
-    NumberedMsg(msg) {}
+  explicit AdjustSuppressionLevelMsg(void *msg) : NumberedMsg(msg) {}
 
 protected:
   void InitMsg() {
@@ -723,49 +685,47 @@ public:
     InitMsg(avai_size);
   }
 
-  explicit ServerRowRequestReplyMsg(void *msg):
-    ArbitrarySizedMsg(msg) {}
+  explicit ServerRowRequestReplyMsg(void *msg) : ArbitrarySizedMsg(msg) {}
 
   size_t get_header_size() {
-    return ArbitrarySizedMsg::get_header_size() + sizeof(int32_t)
-      + sizeof(int32_t) + sizeof(int32_t) + sizeof(uint32_t) + sizeof(size_t);
+    return ArbitrarySizedMsg::get_header_size() + sizeof(int32_t) +
+           sizeof(int32_t) + sizeof(int32_t) + sizeof(uint32_t) +
+           sizeof(size_t);
   }
 
   int32_t &get_table_id() {
-    return *(reinterpret_cast<int32_t*>(mem_.get_mem()
-      + ArbitrarySizedMsg::get_header_size()));
+    return *(reinterpret_cast<int32_t *>(mem_.get_mem() +
+                                         ArbitrarySizedMsg::get_header_size()));
   }
 
   int32_t &get_row_id() {
-    return *(reinterpret_cast<int32_t*>(mem_.get_mem()
-      + ArbitrarySizedMsg::get_header_size() + sizeof(int32_t) ));
+    return *(reinterpret_cast<int32_t *>(mem_.get_mem() +
+                                         ArbitrarySizedMsg::get_header_size() +
+                                         sizeof(int32_t)));
   }
 
   int32_t &get_clock() {
-    return *(reinterpret_cast<int32_t*>(mem_.get_mem()
-      + ArbitrarySizedMsg::get_header_size()
-      + sizeof(int32_t) + sizeof(int32_t) ));
+    return *(reinterpret_cast<int32_t *>(mem_.get_mem() +
+                                         ArbitrarySizedMsg::get_header_size() +
+                                         sizeof(int32_t) + sizeof(int32_t)));
   }
 
   uint32_t &get_version() {
-    return *(reinterpret_cast<uint32_t*>(mem_.get_mem()
-      + ArbitrarySizedMsg::get_header_size()
-      + sizeof(int32_t) + sizeof(int32_t) +sizeof(int32_t)));
+    return *(reinterpret_cast<uint32_t *>(
+        mem_.get_mem() + ArbitrarySizedMsg::get_header_size() +
+        sizeof(int32_t) + sizeof(int32_t) + sizeof(int32_t)));
   }
 
   size_t &get_row_size() {
-    return *(reinterpret_cast<size_t*>(mem_.get_mem()
-      + ArbitrarySizedMsg::get_header_size()
-      + sizeof(int32_t) + sizeof(int32_t) +sizeof(int32_t) + sizeof(uint32_t)));
+    return *(reinterpret_cast<size_t *>(mem_.get_mem() +
+                                        ArbitrarySizedMsg::get_header_size() +
+                                        sizeof(int32_t) + sizeof(int32_t) +
+                                        sizeof(int32_t) + sizeof(uint32_t)));
   }
 
-  void *get_row_data() {
-    return mem_.get_mem() + get_header_size();
-  }
+  void *get_row_data() { return mem_.get_mem() + get_header_size(); }
 
-  size_t get_size() {
-    return get_header_size() + get_avai_size();
-  }
+  size_t get_size() { return get_header_size() + get_avai_size(); }
 
 protected:
   virtual void InitMsg(size_t avai_size) {
@@ -782,44 +742,39 @@ public:
     InitMsg(avai_size);
   }
 
-  explicit ClientSendOpLogMsg(void *msg):
-    ArbitrarySizedMsg(msg) {}
+  explicit ClientSendOpLogMsg(void *msg) : ArbitrarySizedMsg(msg) {}
 
   size_t get_header_size() {
-    return ArbitrarySizedMsg::get_header_size() + sizeof(bool)
-        + sizeof(int32_t) + sizeof(uint32_t) + sizeof(int32_t);
+    return ArbitrarySizedMsg::get_header_size() + sizeof(bool) +
+           sizeof(int32_t) + sizeof(uint32_t) + sizeof(int32_t);
   }
 
   bool &get_is_clock() {
-    return *(reinterpret_cast<bool*>(mem_.get_mem()
-      + ArbitrarySizedMsg::get_header_size()));
+    return *(reinterpret_cast<bool *>(mem_.get_mem() +
+                                      ArbitrarySizedMsg::get_header_size()));
   }
 
   int32_t &get_client_id() {
-    return *(reinterpret_cast<int32_t*>(mem_.get_mem()
-      + ArbitrarySizedMsg::get_header_size() + sizeof(bool)));
+    return *(reinterpret_cast<int32_t *>(
+        mem_.get_mem() + ArbitrarySizedMsg::get_header_size() + sizeof(bool)));
   }
 
   uint32_t &get_version() {
-    return *(reinterpret_cast<uint32_t*>(mem_.get_mem()
-      + ArbitrarySizedMsg::get_header_size() + sizeof(bool)
-      + sizeof(int32_t)));
+    return *(reinterpret_cast<uint32_t *>(mem_.get_mem() +
+                                          ArbitrarySizedMsg::get_header_size() +
+                                          sizeof(bool) + sizeof(int32_t)));
   }
 
   int32_t &get_bg_clock() {
-    return *(reinterpret_cast<int32_t*>(mem_.get_mem()
-      + ArbitrarySizedMsg::get_header_size() + sizeof(bool)
-      + sizeof(int32_t) + sizeof(uint32_t)));
+    return *(reinterpret_cast<int32_t *>(
+        mem_.get_mem() + ArbitrarySizedMsg::get_header_size() + sizeof(bool) +
+        sizeof(int32_t) + sizeof(uint32_t)));
   }
 
   // data is to be accessed via SerializedOpLogAccessor
-  void *get_data() {
-    return mem_.get_mem() + get_header_size();
-  }
+  void *get_data() { return mem_.get_mem() + get_header_size(); }
 
-  size_t get_size() {
-    return get_header_size() + get_avai_size();
-  }
+  size_t get_size() { return get_header_size() + get_avai_size(); }
 
 protected:
   virtual void InitMsg(size_t avai_size) {
@@ -836,38 +791,34 @@ public:
     InitMsg(avai_size);
   }
 
-  explicit ServerPushRowMsg(void *msg):
-    ArbitrarySizedMsg(msg) {}
+  explicit ServerPushRowMsg(void *msg) : ArbitrarySizedMsg(msg) {}
 
   size_t get_header_size() {
-    return ArbitrarySizedMsg::get_header_size() + sizeof(int32_t)
-        + sizeof(uint32_t) + sizeof(bool);
+    return ArbitrarySizedMsg::get_header_size() + sizeof(int32_t) +
+           sizeof(uint32_t) + sizeof(bool);
   }
 
   int32_t &get_clock() {
-    return *(reinterpret_cast<int32_t*>(mem_.get_mem()
-      + ArbitrarySizedMsg::get_header_size()));
+    return *(reinterpret_cast<int32_t *>(mem_.get_mem() +
+                                         ArbitrarySizedMsg::get_header_size()));
   }
 
   uint32_t &get_version() {
-    return *(reinterpret_cast<uint32_t*>(mem_.get_mem()
-      + ArbitrarySizedMsg::get_header_size() + sizeof(int32_t)));
+    return *(reinterpret_cast<uint32_t *>(mem_.get_mem() +
+                                          ArbitrarySizedMsg::get_header_size() +
+                                          sizeof(int32_t)));
   }
 
   bool &get_is_clock() {
-    return *(reinterpret_cast<bool*>(mem_.get_mem()
-      + ArbitrarySizedMsg::get_header_size() + sizeof(int32_t)
-      + sizeof(uint32_t) ));
+    return *(reinterpret_cast<bool *>(mem_.get_mem() +
+                                      ArbitrarySizedMsg::get_header_size() +
+                                      sizeof(int32_t) + sizeof(uint32_t)));
   }
 
   // data is to be accessed via SerializedRowReader
-  void *get_data() {
-    return mem_.get_mem() + get_header_size();
-  }
+  void *get_data() { return mem_.get_mem() + get_header_size(); }
 
-  size_t get_size() {
-    return get_header_size() + get_avai_size();
-  }
+  size_t get_size() { return get_header_size() + get_avai_size(); }
 
 protected:
   virtual void InitMsg(size_t avai_size) {
@@ -876,4 +827,4 @@ protected:
   }
 };
 
-}  // namespace petuum
+} // namespace petuum

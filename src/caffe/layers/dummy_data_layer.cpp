@@ -7,11 +7,12 @@
 namespace caffe {
 
 template <typename Dtype>
-void DummyDataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-    vector<Blob<Dtype>*>* top, const bool init_ps, int* num_tables,
-    map<string, vector<int> >* layer_name_to_blob_global_idx) {
+void DummyDataLayer<Dtype>::LayerSetUp(
+    const vector<Blob<Dtype> *> &bottom, vector<Blob<Dtype> *> *top,
+    const bool init_ps, int *num_tables,
+    map<string, vector<int>> *layer_name_to_blob_global_idx) {
   const int num_top = top->size();
-  const DummyDataParameter& param = this->layer_param_.dummy_data_param();
+  const DummyDataParameter &param = this->layer_param_.dummy_data_param();
   const int num_data_filler = param.data_filler_size();
   CHECK(num_data_filler == 0 || num_data_filler == 1 ||
         num_data_filler == num_top)
@@ -83,8 +84,8 @@ void DummyDataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-void DummyDataLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top) {
+void DummyDataLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype> *> &bottom,
+                                        vector<Blob<Dtype> *> *top) {
   for (int i = 0; i < top->size(); ++i) {
     const int filler_id = (fillers_.size() > 1) ? i : 0;
     if (refill_[filler_id]) {
@@ -95,4 +96,4 @@ void DummyDataLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 
 INSTANTIATE_CLASS(DummyDataLayer);
 
-}  // namespace caffe
+} // namespace caffe

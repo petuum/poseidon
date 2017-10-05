@@ -8,8 +8,7 @@
 
 namespace util {
 
-Context& Context::get_instance()
-{
+Context &Context::get_instance() {
   static Context instance;
   return instance;
 }
@@ -18,7 +17,7 @@ Context::Context() {
   std::vector<google::CommandLineFlagInfo> flags;
   google::GetAllFlags(&flags);
   for (size_t i = 0; i < flags.size(); i++) {
-    google::CommandLineFlagInfo& flag = flags[i];
+    google::CommandLineFlagInfo &flag = flags[i];
     ctx_[flag.name] = flag.is_default ? flag.default_value : flag.current_value;
   }
 
@@ -68,8 +67,8 @@ bool Context::get_bool(std::string key) {
 
 std::string Context::get_string(std::string key) {
   auto it = ctx_.find(key);
-  LOG_IF(FATAL, it == ctx_.end())
-      << "Failed to lookup " << key << " in context.";
+  LOG_IF(FATAL, it == ctx_.end()) << "Failed to lookup " << key
+                                  << " in context.";
   return it->second;
 }
 
@@ -87,39 +86,35 @@ void Context::set(std::string key, bool value) {
   ctx_[key] = (value) ? "true" : "false";
 }
 
-void Context::set(std::string key, std::string value) {
-  ctx_[key] = value;
-}
+void Context::set(std::string key, std::string value) { ctx_[key] = value; }
 
 // utility
-//Parse string into int list
-std::vector<int> Context::parse_int_list(std::string s, std::string delimiter){
+// Parse string into int list
+std::vector<int> Context::parse_int_list(std::string s, std::string delimiter) {
   std::vector<int> list;
-  if (s.length() == 0){
+  if (s.length() == 0) {
     return list;
   }
   size_t pos = 0;
   std::string token;
   int id;
-  while ( (pos = s.find(delimiter)) != std::string::npos ){
+  while ((pos = s.find(delimiter)) != std::string::npos) {
     token = s.substr(0, pos);
-    if (sscanf(token.c_str(), "%d", &id) < 1){
+    if (sscanf(token.c_str(), "%d", &id) < 1) {
       LOG(ERROR) << "cannot parse int list " << token;
-    }
-    else{
+    } else {
       list.push_back(id);
       s.erase(0, pos + delimiter.length());
     }
   }
 
-  //last
-  if (sscanf(s.c_str(), "%d", &id) < 1){
+  // last
+  if (sscanf(s.c_str(), "%d", &id) < 1) {
     LOG(ERROR) << "cannot parse int list " << s;
-  }
-  else{
+  } else {
     list.push_back(id);
   }
   return list;
 }
 
-}   // namespace util
+} // namespace util

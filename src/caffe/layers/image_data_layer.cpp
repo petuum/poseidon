@@ -1,5 +1,5 @@
 #include <fstream>  // NOLINT(readability/streams)
-#include <iostream>  // NOLINT(readability/streams)
+#include <iostream> // NOLINT(readability/streams)
 #include <string>
 #include <utility>
 #include <vector>
@@ -13,20 +13,21 @@
 
 namespace caffe {
 
-template <typename Dtype>
-ImageDataLayer<Dtype>::~ImageDataLayer<Dtype>() {
+template <typename Dtype> ImageDataLayer<Dtype>::~ImageDataLayer<Dtype>() {
   this->JoinPrefetchThread();
 }
 
 template <typename Dtype>
-void ImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top, const bool init_ps) {
+void ImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype> *> &bottom,
+                                           vector<Blob<Dtype> *> *top,
+                                           const bool init_ps) {
   const int new_height = this->layer_param_.image_data_param().new_height();
-  const int new_width  = this->layer_param_.image_data_param().new_width();
+  const int new_width = this->layer_param_.image_data_param().new_width();
   CHECK((new_height == 0 && new_width == 0) ||
-      (new_height > 0 && new_width > 0)) << "Current implementation requires "
-      "new_height and new_width to be set at the same time.";
-  util::Context& context = util::Context::get_instance();
+        (new_height > 0 && new_width > 0))
+      << "Current implementation requires "
+         "new_height and new_width to be set at the same time.";
+  util::Context &context = util::Context::get_instance();
   const int client_id = context.get_int32("client_id");
   const int num_threads = context.num_app_threads();
   string filename;
@@ -44,12 +45,12 @@ void ImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
     int thread_global_idx = client_id * num_threads + this->thread_id_;
     // Distribute files to threads
     while (infile >> filename >> label) {
-      if (file_idx % tot_num_threads == thread_global_idx) { 
+      if (file_idx % tot_num_threads == thread_global_idx) {
         lines_.push_back(std::make_pair(filename, label));
       }
       file_idx++;
     }
-  } else { 
+  } else {
     // Read from client-specific files
     std::ostringstream client_source;
     client_source << source << "_" << client_id;
@@ -75,9 +76,9 @@ void ImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
   lines_id_ = 0;
   // Check if we would need to randomly skip a few data points
   if (this->layer_param_.image_data_param().rand_skip()) {
-    unsigned int skip = caffe_rng_rand() %
-        this->layer_param_.image_data_param().rand_skip();
-    //LOG(INFO) << "Skipping first " << skip << " data points.";
+    unsigned int skip =
+        caffe_rng_rand() % this->layer_param_.image_data_param().rand_skip();
+    // LOG(INFO) << "Skipping first " << skip << " data points.";
     CHECK_GT(lines_.size(), skip) << "Not enough points to skip";
     lines_id_ = skip;
   }
@@ -97,12 +98,12 @@ void ImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
     (*top)[0]->Reshape(batch_size, datum.channels(), datum.height(),
                        datum.width());
     this->prefetch_data_.Reshape(batch_size, datum.channels(), datum.height(),
-        datum.width());
+                                 datum.width());
   }
   if (client_id == 0 && this->thread_id_ == 0) {
     LOG(INFO) << "output data size: " << (*top)[0]->num() << ","
-        << (*top)[0]->channels() << "," << (*top)[0]->height() << ","
-        << (*top)[0]->width();
+              << (*top)[0]->channels() << "," << (*top)[0]->height() << ","
+              << (*top)[0]->width();
   }
   // label
   (*top)[1]->Reshape(batch_size, 1, 1, 1);
@@ -114,20 +115,18 @@ void ImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
   this->datum_size_ = datum.channels() * datum.height() * datum.width();
 }
 
-template <typename Dtype>
-void ImageDataLayer<Dtype>::ShuffleImages() {
-  caffe::rng_t* prefetch_rng =
-      static_cast<caffe::rng_t*>(prefetch_rng_->generator());
+template <typename Dtype> void ImageDataLayer<Dtype>::ShuffleImages() {
+  caffe::rng_t *prefetch_rng =
+      static_cast<caffe::rng_t *>(prefetch_rng_->generator());
   shuffle(lines_.begin(), lines_.end(), prefetch_rng);
 }
 
 // This function is used to create a thread that prefetches the data.
-template <typename Dtype>
-void ImageDataLayer<Dtype>::InternalThreadEntry() {
+template <typename Dtype> void ImageDataLayer<Dtype>::InternalThreadEntry() {
   Datum datum;
   CHECK(this->prefetch_data_.count());
-  Dtype* top_data = this->prefetch_data_.mutable_cpu_data();
-  Dtype* top_label = this->prefetch_label_.mutable_cpu_data();
+  Dtype *top_data = this->prefetch_data_.mutable_cpu_data();
+  Dtype *top_label = this->prefetch_label_.mutable_cpu_data();
   ImageDataParameter image_data_param = this->layer_param_.image_data_param();
   const int batch_size = image_data_param.batch_size();
   const int new_height = image_data_param.new_height();
@@ -138,10 +137,9 @@ void ImageDataLayer<Dtype>::InternalThreadEntry() {
   for (int item_id = 0; item_id < batch_size; ++item_id) {
     // get a blob
     CHECK_GT(lines_size, lines_id_);
-    if (!ReadImageToDatum(lines_[lines_id_].first,
-          lines_[lines_id_].second,
-          new_height, new_width, &datum)) {
-      //continue;
+    if (!ReadImageToDatum(lines_[lines_id_].first, lines_[lines_id_].second,
+                          new_height, new_width, &datum)) {
+      // continue;
       LOG(FATAL) << "Unable to read image " << lines_[lines_id_].first;
     }
 
@@ -164,4 +162,4 @@ void ImageDataLayer<Dtype>::InternalThreadEntry() {
 
 INSTANTIATE_CLASS(ImageDataLayer);
 
-}  // namespace caffe
+} // namespace caffe

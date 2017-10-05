@@ -3,7 +3,6 @@
 
 #pragma once
 
-
 namespace petuum {
 
 // The Lockable concept (implemented as interface/abstract class) describes
@@ -23,7 +22,6 @@ public:
   // blocking. If an exception is thrown, no lock is obtained.  Return true if
   // the lock was acquired, false otherwise
   virtual bool try_lock() = 0;
-
 };
 
-}   // namespace petuum
+} // namespace petuum

@@ -1,0 +1,5 @@
+
+
+* TODO make dnn Get to Get Async -- we should not block on Get for each individual parameter
+
+* TODO oplog_ : is it per table ? Is there one per-process.

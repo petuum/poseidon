@@ -16,8 +16,7 @@ bool InternalThread::StartInternalThread() {
     return false;
   }
   try {
-    thread_ = new caffe::Thread
-        (&InternalThread::InternalThreadEntry, this);
+    thread_ = new caffe::Thread(&InternalThread::InternalThreadEntry, this);
   } catch (...) {
     return false;
   }
@@ -36,4 +35,4 @@ bool InternalThread::WaitForInternalThreadToExit() {
   return true;
 }
 
-}  // namespace caffe
+} // namespace caffe

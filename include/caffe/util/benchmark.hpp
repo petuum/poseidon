@@ -8,7 +8,7 @@
 namespace caffe {
 
 class Timer {
- public:
+public:
   Timer();
   virtual ~Timer();
   void Start();
@@ -20,7 +20,7 @@ class Timer {
   inline bool running() { return running_; }
   inline bool has_run_at_least_once() { return has_run_at_least_once_; }
 
- protected:
+protected:
   void Init();
 
   bool initted_;
@@ -35,6 +35,6 @@ class Timer {
   float elapsed_milliseconds_;
 };
 
-}  // namespace caffe
+} // namespace caffe
 
-#endif   // CAFFE_UTIL_BENCHMARK_H_
+#endif // CAFFE_UTIL_BENCHMARK_H_

@@ -25,11 +25,9 @@ namespace petuum {
 class ClientRow : boost::noncopyable {
 public:
   // ClientRow takes ownership of row_data.
-  ClientRow(int32_t clock __attribute__((unused)), AbstractRow* row_data,
-            bool use_ref_count):
-      num_refs_(0),
-      row_data_ptr_(row_data)
-  {
+  ClientRow(int32_t clock __attribute__((unused)), AbstractRow *row_data,
+            bool use_ref_count)
+      : num_refs_(0), row_data_ptr_(row_data) {
     if (use_ref_count) {
       IncRef_ = &ClientRow::DoIncRef;
       DecRef_ = &ClientRow::DoDecRef;
@@ -39,13 +37,11 @@ public:
     }
   }
 
-  virtual ~ClientRow() { }
+  virtual ~ClientRow() {}
 
-  virtual void SetClock(int32_t clock __attribute__((unused))) { }
+  virtual void SetClock(int32_t clock __attribute__((unused))) {}
 
-  virtual int32_t GetClock() const {
-    return -1;
-  }
+  virtual int32_t GetClock() const { return -1; }
 
   AbstractRow *GetRowDataPtr() {
     CHECK(this != 0);
@@ -57,22 +53,17 @@ public:
   bool HasZeroRef() const { return (num_refs_ == 0); }
 
   // Increment reference count (thread safe).
-  void IncRef() {
-    (this->*IncRef_)();
-  }
+  void IncRef() { (this->*IncRef_)(); }
 
   // Decrement reference count (thread safe).
-  void DecRef() {
-    (this->*DecRef_)();
-  }
+  void DecRef() { (this->*DecRef_)(); }
 
   int32_t get_num_refs() const { return num_refs_; }
 
-private:  // private members
-
+private: // private members
   void DoIncRef() { ++num_refs_; }
   void DoDecRef() { --num_refs_; }
-  void DoNothing() { }
+  void DoNothing() {}
 
   typedef void (ClientRow::*IncDecRefFunc)();
 
@@ -86,4 +77,4 @@ private:  // private members
   IncDecRefFunc DecRef_;
 };
 
-}  // namespace petuum
+} // namespace petuum

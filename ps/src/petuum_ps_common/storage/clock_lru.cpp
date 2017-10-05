@@ -4,17 +4,16 @@ namespace petuum {
 
 const int32_t ClockLRU::MAX_NUM_ROUNDS = 20;
 
-ClockLRU::ClockLRU(int capacity, size_t lock_pool_size) :
-  capacity_(capacity), evict_hand_(0), insert_hand_(0),
-  locks_(lock_pool_size),
-  stale_(new std::atomic_flag[capacity]),
-  row_ids_(capacity) {
-    for (int i = 0; i < capacity_; ++i) {
-      // Default constructor for atomic_flag initialize to unspecified state.
-      stale_[i].test_and_set();
-      row_ids_[i] = -1;
-    }
+ClockLRU::ClockLRU(int capacity, size_t lock_pool_size)
+    : capacity_(capacity), evict_hand_(0), insert_hand_(0),
+      locks_(lock_pool_size), stale_(new std::atomic_flag[capacity]),
+      row_ids_(capacity) {
+  for (int i = 0; i < capacity_; ++i) {
+    // Default constructor for atomic_flag initialize to unspecified state.
+    stale_[i].test_and_set();
+    row_ids_[i] = -1;
   }
+}
 
 int32_t ClockLRU::FindOneToEvict() {
   for (int i = 0; i < MAX_NUM_ROUNDS * capacity_; ++i) {
@@ -22,10 +21,9 @@ int32_t ClockLRU::FindOneToEvict() {
     // not check this slot immediately.
     int32_t slot = evict_hand_++ % capacity_;
 
-    CHECK(slot >=0 && slot < capacity_) << __func__
-                                        << " num_rounds = " << i / capacity_
-                                        << " slot = " << slot
-                                        << " MAX_NUM_ROUNDS = " << MAX_NUM_ROUNDS;
+    CHECK(slot >= 0 && slot < capacity_)
+        << __func__ << " num_rounds = " << i / capacity_ << " slot = " << slot
+        << " MAX_NUM_ROUNDS = " << MAX_NUM_ROUNDS;
 
     // Check recency.
     if (!stale_[slot].test_and_set()) {
@@ -53,7 +51,7 @@ int32_t ClockLRU::FindOneToEvict() {
     return row_ids_[slot];
   }
   LOG(FATAL) << "Cannot find a slot to evict after the clock hand goes "
-    << MAX_NUM_ROUNDS << " rounds.";
+             << MAX_NUM_ROUNDS << " rounds.";
 }
 
 void ClockLRU::Evict(int32_t slot) {
@@ -63,9 +61,7 @@ void ClockLRU::Evict(int32_t slot) {
   locks_.Unlock(slot);
 }
 
-void ClockLRU::NoEvict(int32_t slot) {
-  locks_.Unlock(slot);
-}
+void ClockLRU::NoEvict(int32_t slot) { locks_.Unlock(slot); }
 
 int32_t ClockLRU::Insert(int32_t row_id) {
   Unlocker<SpinMutex> unlocker;
@@ -75,12 +71,9 @@ int32_t ClockLRU::Insert(int32_t row_id) {
   return slot;
 }
 
-void ClockLRU::Reference(int32_t slot) {
-  stale_[slot].clear();
-}
+void ClockLRU::Reference(int32_t slot) { stale_[slot].clear(); }
 
-int32_t ClockLRU::FindEmptySlot(
-    Unlocker<SpinMutex> *unlocker) {
+int32_t ClockLRU::FindEmptySlot(Unlocker<SpinMutex> *unlocker) {
   CHECK_NOTNULL(unlocker);
   // Check empty_slots_.
   int32_t slot = -1;
@@ -90,7 +83,7 @@ int32_t ClockLRU::FindEmptySlot(
     Unlocker<SpinMutex> tmp_unlocker;
     locks_.Lock(slot, &tmp_unlocker);
     CHECK_EQ(-1, row_ids_[slot]) << "insert_hand_ cannot take slot "
-      << "from empty_slots_ queue. Report bug.";
+                                 << "from empty_slots_ queue. Report bug.";
     // Transfer lock
     unlocker->SetLock(tmp_unlocker.GetAndRelease());
     return slot;
@@ -108,7 +101,7 @@ int32_t ClockLRU::FindEmptySlot(
   Unlocker<SpinMutex> tmp_unlocker;
   locks_.Lock(slot, &tmp_unlocker);
   CHECK_EQ(-1, row_ids_[slot])
-    << "This is first round and must be empty. Report bug.";
+      << "This is first round and must be empty. Report bug.";
   // Transfer lock
   unlocker->SetLock(tmp_unlocker.GetAndRelease());
   return slot;
@@ -118,4 +111,4 @@ bool ClockLRU::HasRow(int32_t row_id, int32_t slot) {
   return (row_ids_[slot] == row_id);
 }
 
-}  // namespace petuum
+} // namespace petuum

@@ -20,17 +20,17 @@ public:
   ~NaiveTableOpLogMeta();
 
   typedef bool (*CompRowOpLogMetaFunc)(
-      const std::pair<int32_t, RowOpLogMeta*> &oplog1,
-      const std::pair<int32_t, RowOpLogMeta*> &oplog2);
+      const std::pair<int32_t, RowOpLogMeta *> &oplog1,
+      const std::pair<int32_t, RowOpLogMeta *> &oplog2);
 
   typedef void (*ReassignImportanceFunc)(
-      std::list<std::pair<int32_t, RowOpLogMeta*> > *oplog_list);
+      std::list<std::pair<int32_t, RowOpLogMeta *>> *oplog_list);
 
-  typedef void (*MergeRowOpLogMetaFunc)(RowOpLogMeta* row_oplog_meta,
-                                        const RowOpLogMeta& to_merge);
+  typedef void (*MergeRowOpLogMetaFunc)(RowOpLogMeta *row_oplog_meta,
+                                        const RowOpLogMeta &to_merge);
 
   void InsertMergeRowOpLogMeta(int32_t row_id,
-                               const RowOpLogMeta& row_oplog_meta);
+                               const RowOpLogMeta &row_oplog_meta);
 
   size_t GetCleanNumNewOpLogMeta();
 
@@ -40,45 +40,43 @@ public:
   int32_t InitGetUptoClock(int32_t clock);
   int32_t GetAndClearNextUptoClock();
 
-  size_t GetNumRowOpLogs() const {
-    return oplog_map_.size();
-  }
+  size_t GetNumRowOpLogs() const { return oplog_map_.size(); }
 
 private:
-  static bool CompRowOpLogMetaClock(
-      const std::pair<int32_t, RowOpLogMeta*> &oplog1,
-      const std::pair<int32_t, RowOpLogMeta*> &oplog2);
+  static bool
+  CompRowOpLogMetaClock(const std::pair<int32_t, RowOpLogMeta *> &oplog1,
+                        const std::pair<int32_t, RowOpLogMeta *> &oplog2);
 
-  static bool CompRowOpLogMetaImportance(
-      const std::pair<int32_t, RowOpLogMeta*> &oplog1,
-      const std::pair<int32_t, RowOpLogMeta*> &oplog2);
+  static bool
+  CompRowOpLogMetaImportance(const std::pair<int32_t, RowOpLogMeta *> &oplog1,
+                             const std::pair<int32_t, RowOpLogMeta *> &oplog2);
 
   static bool CompRowOpLogMetaRelativeFIFONReMag(
-      const std::pair<int32_t, RowOpLogMeta*> &oplog1,
-      const std::pair<int32_t, RowOpLogMeta*> &oplog2);
+      const std::pair<int32_t, RowOpLogMeta *> &oplog1,
+      const std::pair<int32_t, RowOpLogMeta *> &oplog2);
 
   static void ReassignImportanceRandom(
-      std::list<std::pair<int32_t, RowOpLogMeta*> > *oplog_list);
+      std::list<std::pair<int32_t, RowOpLogMeta *>> *oplog_list);
 
   static void ReassignImportanceNoOp(
-      std::list<std::pair<int32_t, RowOpLogMeta*> > *oplog_list);
+      std::list<std::pair<int32_t, RowOpLogMeta *>> *oplog_list);
 
-  static void MergeRowOpLogMetaAccum(RowOpLogMeta* row_oplog_meta,
-                                     const RowOpLogMeta& to_merge);
+  static void MergeRowOpLogMetaAccum(RowOpLogMeta *row_oplog_meta,
+                                     const RowOpLogMeta &to_merge);
 
   // return importance1
-  static void MergeRowOpLogMetaNoOp(RowOpLogMeta* row_oplog_meta,
-                                    const RowOpLogMeta& to_merge);
+  static void MergeRowOpLogMetaNoOp(RowOpLogMeta *row_oplog_meta,
+                                    const RowOpLogMeta &to_merge);
 
-  boost::unordered_map<int32_t, RowOpLogMeta*> oplog_map_;
-  std::list<std::pair<int32_t, RowOpLogMeta*> > oplog_list_;
+  boost::unordered_map<int32_t, RowOpLogMeta *> oplog_map_;
+  std::list<std::pair<int32_t, RowOpLogMeta *>> oplog_list_;
 
   const AbstractRow *sample_row_;
   MergeRowOpLogMetaFunc MergeRowOpLogMeta_;
   CompRowOpLogMetaFunc CompRowOpLogMeta_;
   ReassignImportanceFunc ReassignImportance_;
 
-  std::list<std::pair<int32_t, RowOpLogMeta*> >::iterator list_iter_;
+  std::list<std::pair<int32_t, RowOpLogMeta *>>::iterator list_iter_;
 
   // After GetAndClearNextUptoClock(), all row oplogs will be above this clock
   // (exclusive)
@@ -87,5 +85,4 @@ private:
 
   size_t num_new_oplog_metas_;
 };
-
 }

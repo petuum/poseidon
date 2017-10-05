@@ -15,13 +15,12 @@
 
 namespace caffe {
 
-template <typename Dtype>
-DataLayer<Dtype>::~DataLayer<Dtype>() {
+template <typename Dtype> DataLayer<Dtype>::~DataLayer<Dtype>() {
   this->JoinPrefetchThread();
   // clean up the database resources
   switch (this->layer_param_.data_param().backend()) {
   case DataParameter_DB_LEVELDB:
-    break;  // do nothing
+    break; // do nothing
   case DataParameter_DB_LMDB:
     mdb_cursor_close(mdb_cursor_);
     mdb_close(mdb_env_, mdb_dbi_);
@@ -34,9 +33,10 @@ DataLayer<Dtype>::~DataLayer<Dtype>() {
 }
 
 template <typename Dtype>
-void DataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
-    vector<Blob<Dtype>*>* top, const bool init_ps) {
-  util::Context& context = util::Context::get_instance();
+void DataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype> *> &bottom,
+                                      vector<Blob<Dtype> *> *top,
+                                      const bool init_ps) {
+  util::Context &context = util::Context::get_instance();
   const int client_id = context.get_int32("client_id");
 
   // Initialize DB
@@ -44,8 +44,8 @@ void DataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
 
   // Check if we would need to randomly skip a few data points
   if (this->layer_param_.data_param().rand_skip()) {
-    unsigned int skip = caffe_rng_rand() %
-                        this->layer_param_.data_param().rand_skip();
+    unsigned int skip =
+        caffe_rng_rand() % this->layer_param_.data_param().rand_skip();
     LOG(INFO) << "Skipping first " << skip << " data points.";
     while (skip-- > 0) {
       AdvanceIter();
@@ -70,24 +70,24 @@ void DataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
     (*top)[0]->Reshape(this->layer_param_.data_param().batch_size(),
                        datum.channels(), crop_size, crop_size);
     this->prefetch_data_.Reshape(this->layer_param_.data_param().batch_size(),
-        datum.channels(), crop_size, crop_size);
+                                 datum.channels(), crop_size, crop_size);
   } else {
-    (*top)[0]->Reshape(
-        this->layer_param_.data_param().batch_size(), datum.channels(),
-        datum.height(), datum.width());
+    (*top)[0]->Reshape(this->layer_param_.data_param().batch_size(),
+                       datum.channels(), datum.height(), datum.width());
     this->prefetch_data_.Reshape(this->layer_param_.data_param().batch_size(),
-        datum.channels(), datum.height(), datum.width());
+                                 datum.channels(), datum.height(),
+                                 datum.width());
   }
   if (client_id == 0 && this->thread_id_ == 0) {
     LOG(INFO) << "output data size: " << (*top)[0]->num() << ","
-        << (*top)[0]->channels() << "," << (*top)[0]->height() << ","
-        << (*top)[0]->width();
+              << (*top)[0]->channels() << "," << (*top)[0]->height() << ","
+              << (*top)[0]->width();
   }
   // label
   if (this->output_labels_) {
     (*top)[1]->Reshape(this->layer_param_.data_param().batch_size(), 1, 1, 1);
     this->prefetch_label_.Reshape(this->layer_param_.data_param().batch_size(),
-        1, 1, 1);
+                                  1, 1, 1);
   }
   // datum size
   this->datum_channels_ = datum.channels();
@@ -96,14 +96,12 @@ void DataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
   this->datum_size_ = datum.channels() * datum.height() * datum.width();
 }
 
-
 // This function is used to create a thread that prefetches the data.
-template <typename Dtype>
-void DataLayer<Dtype>::InternalThreadEntry() {
+template <typename Dtype> void DataLayer<Dtype>::InternalThreadEntry() {
   Datum datum;
   CHECK(this->prefetch_data_.count());
-  Dtype* top_data = this->prefetch_data_.mutable_cpu_data();
-  Dtype* top_label = NULL;  // suppress warnings about uninitialized variables
+  Dtype *top_data = this->prefetch_data_.mutable_cpu_data();
+  Dtype *top_label = NULL; // suppress warnings about uninitialized variables
   if (this->output_labels_) {
     top_label = this->prefetch_label_.mutable_cpu_data();
   }
@@ -118,10 +116,10 @@ void DataLayer<Dtype>::InternalThreadEntry() {
       datum.ParseFromString(iter_->value().ToString());
       break;
     case DataParameter_DB_LMDB:
-      CHECK_EQ(mdb_cursor_get(mdb_cursor_, &mdb_key_,
-              &mdb_value_, MDB_GET_CURRENT), MDB_SUCCESS);
-      datum.ParseFromArray(mdb_value_.mv_data,
-          mdb_value_.mv_size);
+      CHECK_EQ(
+          mdb_cursor_get(mdb_cursor_, &mdb_key_, &mdb_value_, MDB_GET_CURRENT),
+          MDB_SUCCESS);
+      datum.ParseFromArray(mdb_value_.mv_data, mdb_value_.mv_size);
       break;
     default:
       LOG(FATAL) << "Unknown database backend";
@@ -139,9 +137,8 @@ void DataLayer<Dtype>::InternalThreadEntry() {
   }
 }
 
-template <typename Dtype>
-void DataLayer<Dtype>::InitializeDB() {
-  util::Context& context = util::Context::get_instance();
+template <typename Dtype> void DataLayer<Dtype>::InitializeDB() {
+  util::Context &context = util::Context::get_instance();
   const int num_clients = context.get_int32("num_clients");
   const int num_threads = context.num_app_threads();
   const int client_id = context.get_int32("client_id");
@@ -154,31 +151,30 @@ void DataLayer<Dtype>::InitializeDB() {
     skip_cnt = client_id * num_threads + this->thread_id_;
     step_size_ = num_clients * num_threads;
   } else {
-    source << this->layer_param_.data_param().source() 
-        << "_" << client_id;
-    skip_cnt = this->thread_id_; 
+    source << this->layer_param_.data_param().source() << "_" << client_id;
+    skip_cnt = this->thread_id_;
     step_size_ = num_threads;
   }
 
   switch (this->layer_param_.data_param().backend()) {
-  case DataParameter_DB_LEVELDB:
-    {
-    CHECK(!shared_file_system_ || num_clients <= 1) 
+  case DataParameter_DB_LEVELDB: {
+    CHECK(!shared_file_system_ || num_clients <= 1)
         << "Cannot share leveldb among multiple clients.";
 
-    shared_ptr<leveldb::DB>& global_db = util::Context::global_db(this->net_id_);
-    
+    shared_ptr<leveldb::DB> &global_db =
+        util::Context::global_db(this->net_id_);
+
     if (!global_db) { // initialize global_db (main thread)
-      leveldb::DB* db_temp;
+      leveldb::DB *db_temp;
       leveldb::Options options = GetLevelDBOptions();
       options.create_if_missing = false;
       if (this->thread_id_ == 0) {
         LOG(INFO) << "Opening leveldb " << source.str();
       }
-      leveldb::Status status = leveldb::DB::Open(
-          options, source.str(), &db_temp);
-      CHECK(status.ok()) << "Failed to open leveldb " << source.str() 
-          << std::endl << status.ToString();
+      leveldb::Status status =
+          leveldb::DB::Open(options, source.str(), &db_temp);
+      CHECK(status.ok()) << "Failed to open leveldb " << source.str()
+                         << std::endl << status.ToString();
       db_.reset(db_temp);
       global_db = db_;
     } else { // initialize from global_db (worker threads)
@@ -189,20 +185,20 @@ void DataLayer<Dtype>::InitializeDB() {
     iter_->SeekToFirst();
 
     // proceed to the start point specific to the thread
-    for (int i=0; i < skip_cnt; ++i) {
+    for (int i = 0; i < skip_cnt; ++i) {
       iter_->Next();
       if (!iter_->Valid()) {
         iter_->SeekToFirst();
       }
     }
-    }
-    break;
-  case DataParameter_DB_LMDB:
-    {
+  } break;
+  case DataParameter_DB_LMDB: {
     CHECK_EQ(mdb_env_create(&mdb_env_), MDB_SUCCESS) << "mdb_env_create failed";
-    CHECK_EQ(mdb_env_set_mapsize(mdb_env_, 1099511627776), MDB_SUCCESS);  // 1TB
+    CHECK_EQ(mdb_env_set_mapsize(mdb_env_, 1099511627776), MDB_SUCCESS); // 1TB
     CHECK_EQ(mdb_env_open(mdb_env_, source.str().c_str(),
-             MDB_RDONLY|MDB_NOTLS, 0664), MDB_SUCCESS) << "mdb_env_open failed";
+                          MDB_RDONLY | MDB_NOTLS, 0664),
+             MDB_SUCCESS)
+        << "mdb_env_open failed";
     CHECK_EQ(mdb_txn_begin(mdb_env_, NULL, MDB_RDONLY, &mdb_txn_), MDB_SUCCESS)
         << "mdb_txn_begin failed";
     CHECK_EQ(mdb_open(mdb_txn_, NULL, 0, &mdb_dbi_), MDB_SUCCESS)
@@ -213,51 +209,46 @@ void DataLayer<Dtype>::InitializeDB() {
       LOG(INFO) << "Opening lmdb " << source.str();
     }
     CHECK_EQ(mdb_cursor_get(mdb_cursor_, &mdb_key_, &mdb_value_, MDB_FIRST),
-        MDB_SUCCESS) << "mdb_cursor_get failed " << this->thread_id_ << " " << client_id;
+             MDB_SUCCESS)
+        << "mdb_cursor_get failed " << this->thread_id_ << " " << client_id;
     // proceed to the start point specific to the thread
-    for (int i=0; i < skip_cnt; ++i) {
-      if (mdb_cursor_get(mdb_cursor_, &mdb_key_,
-              &mdb_value_, MDB_NEXT) != MDB_SUCCESS) {
-        CHECK_EQ(mdb_cursor_get(mdb_cursor_, &mdb_key_,
-                &mdb_value_, MDB_FIRST), MDB_SUCCESS);
+    for (int i = 0; i < skip_cnt; ++i) {
+      if (mdb_cursor_get(mdb_cursor_, &mdb_key_, &mdb_value_, MDB_NEXT) !=
+          MDB_SUCCESS) {
+        CHECK_EQ(mdb_cursor_get(mdb_cursor_, &mdb_key_, &mdb_value_, MDB_FIRST),
+                 MDB_SUCCESS);
       }
     }
-    }
-    break;
+  } break;
   default:
     LOG(FATAL) << "Unknown database backend";
-    }
+  }
 }
 
-template <typename Dtype>
-void DataLayer<Dtype>::AdvanceIter() {
+template <typename Dtype> void DataLayer<Dtype>::AdvanceIter() {
   switch (this->layer_param_.data_param().backend()) {
-  case DataParameter_DB_LEVELDB:
-    {
-    for (int i=0; i < step_size_; ++i) {
+  case DataParameter_DB_LEVELDB: {
+    for (int i = 0; i < step_size_; ++i) {
       iter_->Next();
       if (!iter_->Valid()) {
         iter_->SeekToFirst();
       }
     }
-    }
-    break;
-  case DataParameter_DB_LMDB:
-    {
-    for (int i=0; i < step_size_; ++i) {
-      if (mdb_cursor_get(mdb_cursor_, &mdb_key_,
-              &mdb_value_, MDB_NEXT) != MDB_SUCCESS) {
-        CHECK_EQ(mdb_cursor_get(mdb_cursor_, &mdb_key_,
-                &mdb_value_, MDB_FIRST), MDB_SUCCESS);
+  } break;
+  case DataParameter_DB_LMDB: {
+    for (int i = 0; i < step_size_; ++i) {
+      if (mdb_cursor_get(mdb_cursor_, &mdb_key_, &mdb_value_, MDB_NEXT) !=
+          MDB_SUCCESS) {
+        CHECK_EQ(mdb_cursor_get(mdb_cursor_, &mdb_key_, &mdb_value_, MDB_FIRST),
+                 MDB_SUCCESS);
       }
     }
-    }
-    break;
+  } break;
   default:
     LOG(FATAL) << "Unknown database backend";
-    }
+  }
 }
 
 INSTANTIATE_CLASS(DataLayer);
 
-}  // namespace caffe
+} // namespace caffe

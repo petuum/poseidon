@@ -17,4 +17,4 @@
 
 #include "caffe/context.hpp"
 
-#endif  // CAFFE_CAFFE_HPP_
+#endif // CAFFE_CAFFE_HPP_

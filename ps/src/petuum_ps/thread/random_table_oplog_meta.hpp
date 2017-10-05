@@ -14,7 +14,7 @@ public:
   virtual ~RandomTableOpLogMeta();
 
   virtual void InsertMergeRowOpLogMeta(int32_t row_id,
-                                       const RowOpLogMeta& row_oplog_meta);
+                                       const RowOpLogMeta &row_oplog_meta);
 
   virtual size_t GetCleanNumNewOpLogMeta();
 
@@ -38,5 +38,4 @@ private:
   std::mt19937 generator_; // max 4.2 billion
   std::uniform_int_distribution<int> uniform_dist_;
 };
-
 }

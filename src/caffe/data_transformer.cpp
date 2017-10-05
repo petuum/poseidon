@@ -6,12 +6,11 @@
 
 namespace caffe {
 
-template<typename Dtype>
+template <typename Dtype>
 void DataTransformer<Dtype>::Transform(const int batch_item_id,
-                                       const Datum& datum,
-                                       const Dtype* mean,
-                                       Dtype* transformed_data) {
-  const string& data = datum.data();
+                                       const Datum &datum, const Dtype *mean,
+                                       Dtype *transformed_data) {
+  const string &data = datum.data();
   const int channels = datum.channels();
   const int height = datum.height();
   const int width = datum.width();
@@ -24,8 +23,8 @@ void DataTransformer<Dtype>::Transform(const int batch_item_id,
   const bool has_mean_file = param_.has_mean_file();
   const bool has_mean_values = mean_values_.size() > 0;
   if (has_mean_values) {
-    CHECK(mean_values_.size() == 1 || mean_values_.size() == channels) <<
-     "Specify either 1 mean_value or as many as channels: " << channels;
+    CHECK(mean_values_.size() == 1 || mean_values_.size() == channels)
+        << "Specify either 1 mean_value or as many as channels: " << channels;
     if (channels > 1 && mean_values_.size() == 1) {
       // Replicate the mean_value for simplicity
       for (int c = 1; c < channels; ++c) {
@@ -56,19 +55,20 @@ void DataTransformer<Dtype>::Transform(const int batch_item_id,
         for (int h = 0; h < crop_size; ++h) {
           for (int w = 0; w < crop_size; ++w) {
             int data_index = (c * height + h + h_off) * width + w + w_off;
-            int top_index = ((batch_item_id * channels + c) * crop_size + h)
-                * crop_size + (crop_size - 1 - w);
+            int top_index =
+                ((batch_item_id * channels + c) * crop_size + h) * crop_size +
+                (crop_size - 1 - w);
             Dtype datum_element =
                 static_cast<Dtype>(static_cast<uint8_t>(data[data_index]));
-            //transformed_data[top_index] =
+            // transformed_data[top_index] =
             //    (datum_element - mean[data_index]) * scale;
             if (has_mean_file) {
               transformed_data[top_index] =
-                (datum_element - mean[data_index]) * scale;
+                  (datum_element - mean[data_index]) * scale;
             } else {
               if (has_mean_values) {
                 transformed_data[top_index] =
-                  (datum_element - mean_values_[c]) * scale;
+                    (datum_element - mean_values_[c]) * scale;
               } else {
                 transformed_data[top_index] = datum_element * scale;
               }
@@ -81,20 +81,21 @@ void DataTransformer<Dtype>::Transform(const int batch_item_id,
       for (int c = 0; c < channels; ++c) {
         for (int h = 0; h < crop_size; ++h) {
           for (int w = 0; w < crop_size; ++w) {
-            int top_index = ((batch_item_id * channels + c) * crop_size + h)
-                * crop_size + w;
+            int top_index =
+                ((batch_item_id * channels + c) * crop_size + h) * crop_size +
+                w;
             int data_index = (c * height + h + h_off) * width + w + w_off;
             Dtype datum_element =
                 static_cast<Dtype>(static_cast<uint8_t>(data[data_index]));
-            //transformed_data[top_index] =
+            // transformed_data[top_index] =
             //    (datum_element - mean[data_index]) * scale;
             if (has_mean_file) {
               transformed_data[top_index] =
-                (datum_element - mean[data_index]) * scale;
+                  (datum_element - mean[data_index]) * scale;
             } else {
               if (has_mean_values) {
                 transformed_data[top_index] =
-                  (datum_element - mean_values_[c]) * scale;
+                    (datum_element - mean_values_[c]) * scale;
               } else {
                 transformed_data[top_index] = datum_element * scale;
               }
@@ -110,8 +111,7 @@ void DataTransformer<Dtype>::Transform(const int batch_item_id,
     // we will prefer to use data() first, and then try float_data()
     if (data.size()) {
       for (int j = 0; j < size; ++j) {
-        Dtype datum_element =
-            static_cast<Dtype>(static_cast<uint8_t>(data[j]));
+        Dtype datum_element = static_cast<Dtype>(static_cast<uint8_t>(data[j]));
         transformed_data[j + batch_item_id * size] =
             (datum_element - mean[j]) * scale;
       }
@@ -124,10 +124,9 @@ void DataTransformer<Dtype>::Transform(const int batch_item_id,
   }
 }
 
-template <typename Dtype>
-void DataTransformer<Dtype>::InitRand() {
-  const bool needs_rand = (phase_ == Caffe::TRAIN) &&
-      (param_.mirror() || param_.crop_size());
+template <typename Dtype> void DataTransformer<Dtype>::InitRand() {
+  const bool needs_rand =
+      (phase_ == Caffe::TRAIN) && (param_.mirror() || param_.crop_size());
   if (needs_rand) {
     const unsigned int rng_seed = caffe_rng_rand();
     rng_.reset(new Caffe::RNG(rng_seed));
@@ -136,14 +135,12 @@ void DataTransformer<Dtype>::InitRand() {
   }
 }
 
-template <typename Dtype>
-unsigned int DataTransformer<Dtype>::Rand() {
+template <typename Dtype> unsigned int DataTransformer<Dtype>::Rand() {
   CHECK(rng_);
-  caffe::rng_t* rng =
-      static_cast<caffe::rng_t*>(rng_->generator());
+  caffe::rng_t *rng = static_cast<caffe::rng_t *>(rng_->generator());
   return (*rng)();
 }
 
 INSTANTIATE_CLASS(DataTransformer);
 
-}  // namespace caffe
+} // namespace caffe

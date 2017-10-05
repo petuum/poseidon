@@ -4,9 +4,7 @@
 
 namespace petuum {
 
-HighResolutionTimer::HighResolutionTimer() : total_time_(0) {
-  restart();
-}
+HighResolutionTimer::HighResolutionTimer() : total_time_(0) { restart(); }
 
 void HighResolutionTimer::restart() {
   int status = clock_gettime(CLOCK_MONOTONIC, &start_time_);
@@ -33,8 +31,6 @@ double HighResolutionTimer::elapsed_max() const {
   return double((std::numeric_limits<double>::max)());
 }
 
-double HighResolutionTimer::elapsed_min() const {
-  return 0.0;
-}
+double HighResolutionTimer::elapsed_min() const { return 0.0; }
 
-}   // namespace petuum
+} // namespace petuum

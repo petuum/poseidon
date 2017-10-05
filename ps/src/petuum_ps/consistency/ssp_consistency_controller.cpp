@@ -9,24 +9,18 @@
 namespace petuum {
 
 SSPConsistencyController::SSPConsistencyController(
-    const TableInfo& info,
-    int32_t table_id,
-    AbstractProcessStorage& process_storage,
-    AbstractOpLog& oplog,
-    const AbstractRow* sample_row,
+    const TableInfo &info, int32_t table_id,
+    AbstractProcessStorage &process_storage, AbstractOpLog &oplog,
+    const AbstractRow *sample_row,
     boost::thread_specific_ptr<ThreadTable> &thread_cache,
-    TableOpLogIndex &oplog_index,
-    int32_t row_oplog_type) :
-  AbstractConsistencyController(table_id, process_storage,
-    sample_row),
-  staleness_(info.table_staleness),
-  thread_cache_(thread_cache),
-  oplog_index_(oplog_index),
-  oplog_(oplog),
-  version_maintain_(info.version_maintain) {
-  AddUpdates_ = std::bind(&AbstractRow::AddUpdates,
-                          sample_row_, std::placeholders::_1,
-                          std::placeholders::_2, std::placeholders::_3);
+    TableOpLogIndex &oplog_index, int32_t row_oplog_type)
+    : AbstractConsistencyController(table_id, process_storage, sample_row),
+      staleness_(info.table_staleness), thread_cache_(thread_cache),
+      oplog_index_(oplog_index), oplog_(oplog),
+      version_maintain_(info.version_maintain) {
+  AddUpdates_ =
+      std::bind(&AbstractRow::AddUpdates, sample_row_, std::placeholders::_1,
+                std::placeholders::_2, std::placeholders::_3);
   if (row_oplog_type == RowOpLogType::kDenseRowOpLog) {
     DenseBatchIncOpLog_ = &SSPConsistencyController::DenseBatchIncDenseOpLog;
   } else {
@@ -35,7 +29,7 @@ SSPConsistencyController::SSPConsistencyController(
 }
 
 ClientRow *SSPConsistencyController::Get(int32_t row_id,
-                                         RowAccessor* row_accessor,
+                                         RowAccessor *row_accessor,
                                          int32_t clock) {
   STATS_APP_SAMPLE_SSP_GET_BEGIN(table_id_);
   // Look for row_id in process_storage_.
@@ -68,7 +62,7 @@ ClientRow *SSPConsistencyController::Get(int32_t row_id,
     // We'll fix it if it turns out there are too many misses.
     ++num_fetches;
     CHECK_LE(num_fetches, 3); // to prevent infinite loop
-  }while(client_row == 0);
+  } while (client_row == 0);
 
   CHECK_GE(client_row->GetClock(), stalest_clock);
   STATS_APP_SAMPLE_SSP_GET_END(table_id_, false);
@@ -77,9 +71,9 @@ ClientRow *SSPConsistencyController::Get(int32_t row_id,
 }
 
 void SSPConsistencyController::Inc(int32_t row_id, int32_t column_id,
-    const void* delta) {
-  //LOG(INFO) << "row_id = " << row_id;
-  //thread_cache_->IndexUpdate(row_id);
+                                   const void *delta) {
+  // LOG(INFO) << "row_id = " << row_id;
+  // thread_cache_->IndexUpdate(row_id);
 
   OpLogAccessor oplog_accessor;
   oplog_.FindInsertOpLog(row_id, &oplog_accessor);
@@ -87,7 +81,7 @@ void SSPConsistencyController::Inc(int32_t row_id, int32_t column_id,
   void *oplog_delta = oplog_accessor.get_row_oplog()->FindCreate(column_id);
   sample_row_->AddUpdates(column_id, oplog_delta, delta);
 
-  if (!version_maintain_) {
+  if (false == version_maintain_) {
     RowAccessor row_accessor;
     ClientRow *client_row = process_storage_.Find(row_id, &row_accessor);
     if (client_row != 0) {
@@ -97,25 +91,28 @@ void SSPConsistencyController::Inc(int32_t row_id, int32_t column_id,
 }
 
 void SSPConsistencyController::BatchInc(int32_t row_id,
-  const int32_t* column_ids, const void* updates, int32_t num_updates) {
+                                        const int32_t *column_ids,
+                                        const void *updates,
+                                        int32_t num_updates) {
 
   STATS_APP_SAMPLE_BATCH_INC_OPLOG_BEGIN();
-  //thread_cache_->IndexUpdate(row_id);
+  // thread_cache_->IndexUpdate(row_id);
 
   OpLogAccessor oplog_accessor;
   oplog_.FindInsertOpLog(row_id, &oplog_accessor);
 
-  const uint8_t* deltas_uint8 = reinterpret_cast<const uint8_t*>(updates);
+  const uint8_t *deltas_uint8 = reinterpret_cast<const uint8_t *>(updates);
 
   for (int i = 0; i < num_updates; ++i) {
-    void *oplog_delta
-        = oplog_accessor.get_row_oplog()->FindCreate(column_ids[i]);
-    sample_row_->AddUpdates(column_ids[i], oplog_delta, deltas_uint8
-			    + sample_row_->get_update_size()*i);
+    void *oplog_delta =
+        oplog_accessor.get_row_oplog()->FindCreate(column_ids[i]);
+    sample_row_->AddUpdates(column_ids[i], oplog_delta,
+                            deltas_uint8 + sample_row_->get_update_size() * i);
   }
   STATS_APP_SAMPLE_BATCH_INC_OPLOG_END();
 
-  if (!version_maintain_) {
+  if (false == version_maintain_) {
+    CHECK_EQ(table_id_, 2);
     STATS_APP_SAMPLE_BATCH_INC_PROCESS_STORAGE_BEGIN();
     RowAccessor row_accessor;
     ClientRow *client_row = process_storage_.Find(row_id, &row_accessor);
@@ -127,11 +124,12 @@ void SSPConsistencyController::BatchInc(int32_t row_id,
   }
 }
 
-void SSPConsistencyController::DenseBatchInc(
-    int32_t row_id, const void *updates,
-    int32_t index_st, int32_t num_updates) {
+void SSPConsistencyController::DenseBatchInc(int32_t row_id,
+                                             const void *updates,
+                                             int32_t index_st,
+                                             int32_t num_updates) {
   STATS_APP_SAMPLE_BATCH_INC_OPLOG_BEGIN();
-  //thread_cache_->IndexUpdate(row_id);
+  // thread_cache_->IndexUpdate(row_id);
 
   OpLogAccessor oplog_accessor;
   bool new_create = oplog_.FindInsertOpLog(row_id, &oplog_accessor);
@@ -141,9 +139,9 @@ void SSPConsistencyController::DenseBatchInc(
   if (new_create) {
     row_oplog->OverwriteWithDenseUpdate(updates, index_st, num_updates);
   } else {
-    const uint8_t* deltas_uint8 = reinterpret_cast<const uint8_t*>(updates);
-    (this->*DenseBatchIncOpLog_)(row_oplog, deltas_uint8,
-                                 index_st, num_updates);
+    const uint8_t *deltas_uint8 = reinterpret_cast<const uint8_t *>(updates);
+    (this->*DenseBatchIncOpLog_)(row_oplog, deltas_uint8, index_st,
+                                 num_updates);
   }
 
   STATS_APP_SAMPLE_BATCH_INC_OPLOG_END();
@@ -153,14 +151,14 @@ void SSPConsistencyController::DenseBatchInc(
     RowAccessor row_accessor;
     ClientRow *client_row = process_storage_.Find(row_id, &row_accessor);
     if (client_row != 0) {
-      client_row->GetRowDataPtr()->ApplyDenseBatchInc(
-          updates, index_st, num_updates);
+      client_row->GetRowDataPtr()->ApplyDenseBatchInc(updates, index_st,
+                                                      num_updates);
     }
     STATS_APP_SAMPLE_BATCH_INC_PROCESS_STORAGE_END();
   }
 }
 
-//void SSPConsistencyController::DenseBatchIncDenseOpLog(
+// void SSPConsistencyController::DenseBatchIncDenseOpLog(
 //    AbstractRowOpLog *row_oplog, const uint8_t *updates,
 //    int32_t index_st, int32_t num_updates) {
 //  size_t update_size = sample_row_->get_update_size();
@@ -174,13 +172,13 @@ void SSPConsistencyController::DenseBatchInc(
 //}
 
 void SSPConsistencyController::DenseBatchIncDenseOpLog(
-    AbstractRowOpLog *row_oplog, const uint8_t *updates,
-    int32_t index_st, int32_t num_updates) {
+    AbstractRowOpLog *row_oplog, const uint8_t *updates, int32_t index_st,
+    int32_t num_updates) {
   size_t update_size = sample_row_->get_update_size();
   CHECK_EQ(update_size, sizeof(float));
-  float *oplog_delta = reinterpret_cast<float*>(
-      row_oplog->FindCreate(index_st));
-  const float *updates_float = reinterpret_cast<const float*>(updates);
+  float *oplog_delta =
+      reinterpret_cast<float *>(row_oplog->FindCreate(index_st));
+  const float *updates_float = reinterpret_cast<const float *>(updates);
   for (int i = 0; i < num_updates; ++i) {
     int32_t col_id = i + index_st;
     oplog_delta[col_id] += updates_float[col_id];
@@ -188,19 +186,18 @@ void SSPConsistencyController::DenseBatchIncDenseOpLog(
 }
 
 void SSPConsistencyController::DenseBatchIncNonDenseOpLog(
-    AbstractRowOpLog *row_oplog, const uint8_t *updates,
-    int32_t index_st, int32_t num_updates) {
+    AbstractRowOpLog *row_oplog, const uint8_t *updates, int32_t index_st,
+    int32_t num_updates) {
   size_t update_size = sample_row_->get_update_size();
   for (int i = 0; i < num_updates; ++i) {
     int32_t col_id = i + index_st;
-    void *oplog_delta
-        = row_oplog->FindCreate(col_id);
-    sample_row_->AddUpdates(col_id, oplog_delta, updates + update_size*i);
+    void *oplog_delta = row_oplog->FindCreate(col_id);
+    sample_row_->AddUpdates(col_id, oplog_delta, updates + update_size * i);
   }
 }
 
 void SSPConsistencyController::ThreadGet(int32_t row_id,
-  ThreadRowAccessor* row_accessor) {
+                                         ThreadRowAccessor *row_accessor) {
   STATS_APP_SAMPLE_THREAD_GET_BEGIN(table_id_);
   AbstractRow *row_data = thread_cache_->GetRow(row_id);
   if (row_data != 0) {
@@ -240,7 +237,7 @@ void SSPConsistencyController::ThreadGet(int32_t row_id,
     // We'll fix it if it turns out there are too many misses.
     ++num_fetches;
     CHECK_LE(num_fetches, 3); // to prevent infinite loop
-  } while(client_row == 0);
+  } while (client_row == 0);
 
   CHECK_GE(client_row->GetClock(), stalest_clock);
 
@@ -253,18 +250,21 @@ void SSPConsistencyController::ThreadGet(int32_t row_id,
 }
 
 void SSPConsistencyController::ThreadInc(int32_t row_id, int32_t column_id,
-    const void* delta) {
+                                         const void *delta) {
   thread_cache_->Inc(row_id, column_id, delta);
 }
 
 void SSPConsistencyController::ThreadBatchInc(int32_t row_id,
-  const int32_t* column_ids, const void* updates, int32_t num_updates) {
+                                              const int32_t *column_ids,
+                                              const void *updates,
+                                              int32_t num_updates) {
   thread_cache_->BatchInc(row_id, column_ids, updates, num_updates);
 }
 
-void SSPConsistencyController::ThreadDenseBatchInc(
-    int32_t row_id, const void *updates, int32_t index_st,
-    int32_t num_updates) {
+void SSPConsistencyController::ThreadDenseBatchInc(int32_t row_id,
+                                                   const void *updates,
+                                                   int32_t index_st,
+                                                   int32_t num_updates) {
   thread_cache_->DenseBatchInc(row_id, updates, index_st, num_updates);
 }
 
@@ -274,8 +274,8 @@ void SSPConsistencyController::FlushThreadCache() {
 
 void SSPConsistencyController::Clock() {
   // order is important
-  //thread_cache_->FlushCache(process_storage_, oplog_, sample_row_);
-  //thread_cache_->FlushOpLogIndex(oplog_index_);
+  // thread_cache_->FlushCache(process_storage_, oplog_, sample_row_);
+  // thread_cache_->FlushOpLogIndex(oplog_index_);
 }
 
-}   // namespace petuum
+} // namespace petuum

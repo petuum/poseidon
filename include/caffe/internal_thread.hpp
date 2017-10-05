@@ -10,13 +10,13 @@ namespace caffe {
  * Defined in caffe/util/thread.hpp
  */
 class Thread {
- public:
-  template<typename Callable, class A1>
-  Thread(Callable func, A1 a1);
+public:
+  template <typename Callable, class A1> Thread(Callable func, A1 a1);
   void join();
   bool joinable();
- private:
-  void* thread_;
+
+private:
+  void *thread_;
 };
 
 /**
@@ -25,7 +25,7 @@ class Thread {
  * by reimplementing the virutal function InternalThreadEntry.
  */
 class InternalThread {
- public:
+public:
   InternalThread() : thread_(NULL) {}
   virtual ~InternalThread();
 
@@ -37,14 +37,14 @@ class InternalThread {
 
   bool is_started() const { return thread_ != NULL && thread_->joinable(); }
 
- protected:
+protected:
   /* Implement this method in your subclass
       with the code you want your thread to run. */
   virtual void InternalThreadEntry() {}
 
-  caffe::Thread* thread_;
+  caffe::Thread *thread_;
 };
 
-}  // namespace caffe
+} // namespace caffe
 
 #endif

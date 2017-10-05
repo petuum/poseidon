@@ -7,19 +7,16 @@
 
 namespace caffe {
 
-template<typename Callable, class A1>
-Thread::Thread(Callable func, A1 a1) {
+template <typename Callable, class A1> Thread::Thread(Callable func, A1 a1) {
   this->thread_ = new boost::thread(func, a1);
 }
 
-void Thread::join() {
-  static_cast<boost::thread*>(this->thread_)->join();
-}
+void Thread::join() { static_cast<boost::thread *>(this->thread_)->join(); }
 
 bool Thread::joinable() {
-  return static_cast<boost::thread*>(this->thread_)->joinable();
+  return static_cast<boost::thread *>(this->thread_)->joinable();
 }
 
-}  // namespace caffe
+} // namespace caffe
 
 #endif

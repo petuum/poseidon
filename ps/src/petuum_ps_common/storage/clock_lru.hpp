@@ -54,14 +54,14 @@ public:
   // eviction.
   static const int32_t MAX_NUM_ROUNDS;
 
-private:    // private functions
+private: // private functions
   // Return the slot found, which is guaranteed to be available as long as
   // unlocker is alive. row_id_ won't be set for the returned slot # (still
   // -1), which needs to be set in Insert(). Fail the program if can't find
   // any slot.
-  int32_t FindEmptySlot(Unlocker<SpinMutex>* unlocker);
+  int32_t FindEmptySlot(Unlocker<SpinMutex> *unlocker);
 
-private:    // private members
+private: // private members
   const int32_t capacity_;
 
   // Point to the candidate slot for next evict attempt.
@@ -90,4 +90,4 @@ private:    // private members
   std::vector<int32_t> row_ids_;
 };
 
-}  // namespace petuum
+} // namespace petuum

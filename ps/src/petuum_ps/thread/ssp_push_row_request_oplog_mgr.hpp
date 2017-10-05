@@ -25,12 +25,12 @@ namespace petuum {
 
 class SSPPushRowRequestOpLogMgr : public RowRequestOpLogMgr {
 public:
-  SSPPushRowRequestOpLogMgr(const std::vector<int32_t> &server_ids) :
-      server_version_mgr_(server_ids) { }
+  SSPPushRowRequestOpLogMgr(const std::vector<int32_t> &server_ids)
+      : server_version_mgr_(server_ids) {}
 
   ~SSPPushRowRequestOpLogMgr() {
     for (auto iter = version_oplog_list_.begin();
-      iter != version_oplog_list_.end(); iter++) {
+         iter != version_oplog_list_.end(); iter++) {
       CHECK_NOTNULL(iter->second);
       delete iter->second;
     }
@@ -43,7 +43,8 @@ public:
   // Get a list of app thread ids that can be satisfied with this reply.
   // Corresponding row requests are removed upon returning.
   int32_t InformReply(int32_t table_id, int32_t row_id, int32_t clock,
-    uint32_t curr_version, std::vector<int32_t> *app_thread_ids);
+                      uint32_t curr_version,
+                      std::vector<int32_t> *app_thread_ids);
 
   // Get OpLog of a particular version.
   BgOpLog *GetOpLog(uint32_t version);
@@ -62,19 +63,19 @@ private:
 
   // map <table_id, row_id> to a list of requests
   // The list is in increasing order of clock.
-  std::map<std::pair<int32_t, int32_t>,
-    std::list<RowRequestInfo> > pending_row_requests_;
+  std::map<std::pair<int32_t, int32_t>, std::list<RowRequestInfo>>
+      pending_row_requests_;
 
   // The version number of a request means that all oplogs up to and including
   // this version have been applied to this row.
-  std::list<std::pair<uint32_t, BgOpLog*> > version_oplog_list_;
+  std::list<std::pair<uint32_t, BgOpLog *>> version_oplog_list_;
   // used for OpLogIter
   uint32_t oplog_iter_version_next_;
   uint32_t oplog_iter_version_st_;
   uint32_t oplog_iter_version_end_;
-  std::list<std::pair<uint32_t, BgOpLog*> >::const_iterator oplog_iter_;
+  std::list<std::pair<uint32_t, BgOpLog *>>::const_iterator oplog_iter_;
 
   ServerVersionMgr server_version_mgr_;
 };
 
-}  // namespace petuum
+} // namespace petuum

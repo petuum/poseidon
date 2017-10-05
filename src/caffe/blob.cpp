@@ -4,15 +4,21 @@
 #include "caffe/util/math_functions.hpp"
 #include "caffe/context.hpp"
 
+#ifdef USE_PS_THIN
+#include <petuum_ps/include/petuum_ps.hpp>
+#include <petuum_ps/include/table_gflags_declare.hpp>
+#include <petuum_ps/include/init_table_config.hpp>
+#else
 #include <petuum_ps_common/include/petuum_ps.hpp>
 #include <petuum_ps_common/include/table_gflags_declare.hpp>
 #include <petuum_ps_common/include/init_table_config.hpp>
+#endif
 
 namespace caffe {
 
 template <typename Dtype>
 void Blob<Dtype>::Reshape(const int num, const int channels, const int height,
-    const int width) {
+                          const int width) {
   CHECK_GE(num, 0);
   CHECK_GE(channels, 0);
   CHECK_GE(height, 0);
@@ -27,43 +33,43 @@ void Blob<Dtype>::Reshape(const int num, const int channels, const int height,
     data_.reset(new SyncedMemory(capacity_ * sizeof(Dtype)));
     diff_.reset(new SyncedMemory(capacity_ * sizeof(Dtype)));
   }
-  
-  CHECK(data_) << " count " << count_ << " "<< num_ << " " << channels_ 
-               << " " << height_ << " " << width_ << " capacity " << capacity_;
-  if(blob_mode_ == BlobProto_BlobMode_GLOBAL) {
+
+  CHECK(data_) << " count " << count_ << " " << num_ << " " << channels_ << " "
+               << height_ << " " << width_ << " capacity " << capacity_;
+  if (blob_mode_ == BlobProto_BlobMode_GLOBAL) {
     const int num_rows_per_table = util::Context::num_rows_per_table();
-    global_table_row_capacity_ = (count_ + num_rows_per_table - 1) / num_rows_per_table;
+    global_table_row_capacity_ =
+        (count_ + num_rows_per_table - 1) / num_rows_per_table;
   }
 }
 
 template <typename Dtype>
-void Blob<Dtype>::ReshapeWithoutAllocation(const int num, const int channels, 
-    const int height, const int width) {
+void Blob<Dtype>::ReshapeWithoutAllocation(const int num, const int channels,
+                                           const int height, const int width) {
   // call Reshap() directly since SyncedMemory allocates memory lazily
-  Reshape(num, channels, height, width);    
+  Reshape(num, channels, height, width);
 }
 
 template <typename Dtype>
-void Blob<Dtype>::ReshapeLike(const Blob<Dtype>& other) {
+void Blob<Dtype>::ReshapeLike(const Blob<Dtype> &other) {
   Reshape(other.num(), other.channels(), other.height(), other.width());
 }
 
 template <typename Dtype>
-void Blob<Dtype>::ReshapeWithoutAllocationLike(const Blob<Dtype>& other) {
-  ReshapeWithoutAllocation(other.num(), other.channels(), other.height(), 
-      other.width());
+void Blob<Dtype>::ReshapeWithoutAllocationLike(const Blob<Dtype> &other) {
+  ReshapeWithoutAllocation(other.num(), other.channels(), other.height(),
+                           other.width());
 }
 
-template <typename Dtype>
-void Blob<Dtype>::CreatePSTable() {
+template <typename Dtype> void Blob<Dtype>::CreatePSTable() {
   CHECK_GE(global_id_, 0);
   CHECK_GE(count_, 0);
-  
-  util::Context& context = util::Context::get_instance();
+
+  util::Context &context = util::Context::get_instance();
   int param_table_staleness = context.get_int32("table_staleness");
   int num_rows_per_table = context.num_rows_per_table();
 
-  // Creating PS tables 
+  // Creating PS tables
   petuum::ClientTableConfig table_config;
   petuum::InitTableConfig(&table_config);
 
@@ -72,102 +78,98 @@ void Blob<Dtype>::CreatePSTable() {
   table_config.process_cache_capacity = num_rows_per_table * 10;
   table_config.oplog_capacity = table_config.process_cache_capacity;
   table_config.thread_cache_capacity = 1;
-  global_table_row_capacity_
-      = (count_ + num_rows_per_table - 1) / num_rows_per_table;
+  global_table_row_capacity_ =
+      (count_ + num_rows_per_table - 1) / num_rows_per_table;
   table_config.table_info.row_capacity = global_table_row_capacity_;
-  table_config.table_info.dense_row_oplog_capacity
-      = global_table_row_capacity_;
+  table_config.table_info.dense_row_oplog_capacity = global_table_row_capacity_;
   table_config.no_oplog_replay = true;
+#ifndef USE_PS_THIN
+  if (2 == global_id_) {
+    table_config.table_info.version_maintain = false;
+  }
+#endif
 
   petuum::PSTableGroup::CreateTable(global_id_, table_config);
 }
 
 template <typename Dtype>
 Blob<Dtype>::Blob(const int num, const int channels, const int height,
-    const int width, const BlobProto_BlobMode blob_mode, const int global_id)
-  // capacity_ must be initialized before calling Reshape
-  : capacity_(0), blob_mode_(blob_mode), global_id_(global_id) {
-  if(blob_mode_ == BlobProto_BlobMode_GLOBAL) {
+                  const int width, const BlobProto_BlobMode blob_mode,
+                  const int global_id)
+    // capacity_ must be initialized before calling Reshape
+    : capacity_(0),
+      blob_mode_(blob_mode),
+      global_id_(global_id) {
+  if (blob_mode_ == BlobProto_BlobMode_GLOBAL) {
     ReshapeWithoutAllocation(num, channels, height, width);
   } else {
     Reshape(num, channels, height, width);
   }
 }
 
-template <typename Dtype>
-const Dtype* Blob<Dtype>::cpu_data() const {
-  //if (blob_mode_ == BlobProto_BlobMode_GLOBAL 
+template <typename Dtype> const Dtype *Blob<Dtype>::cpu_data() const {
+  // if (blob_mode_ == BlobProto_BlobMode_GLOBAL
   //    && data_->head() == SyncedMemory::UNINITIALIZED) {
   //  // load data from PS table
   //  Dtype* data_temp = ReadPSTable();
   //  data_->set_cpu_ps_data(data_temp);
   //}
   CHECK(data_);
-  return (const Dtype*)data_->cpu_data();
+  return (const Dtype *)data_->cpu_data();
 }
 
-template <typename Dtype>
-void Blob<Dtype>::set_cpu_data(Dtype* data) {
+template <typename Dtype> void Blob<Dtype>::set_cpu_data(Dtype *data) {
   CHECK(data);
   data_->set_cpu_data(data);
 }
 
-//template <typename Dtype>
-//void Blob<Dtype>::free_ps_data() {
+// template <typename Dtype>
+// void Blob<Dtype>::free_ps_data() {
 //  CHECK_EQ(blob_mode_, BlobProto_BlobMode_GLOBAL);
 //  data_->free_ps_data();
 //}
 
-template <typename Dtype>
-const Dtype* Blob<Dtype>::gpu_data() const {
+template <typename Dtype> const Dtype *Blob<Dtype>::gpu_data() const {
   CHECK(data_);
-  return (const Dtype*)data_->gpu_data();
+  return (const Dtype *)data_->gpu_data();
 }
 
-template <typename Dtype>
-const Dtype* Blob<Dtype>::cpu_diff() const {
+template <typename Dtype> const Dtype *Blob<Dtype>::cpu_diff() const {
   CHECK(diff_);
-  return (const Dtype*)diff_->cpu_data();
+  return (const Dtype *)diff_->cpu_data();
 }
 
-template <typename Dtype>
-const Dtype* Blob<Dtype>::gpu_diff() const {
+template <typename Dtype> const Dtype *Blob<Dtype>::gpu_diff() const {
   CHECK(diff_);
-  return (const Dtype*)diff_->gpu_data();
+  return (const Dtype *)diff_->gpu_data();
 }
 
-template <typename Dtype>
-Dtype* Blob<Dtype>::mutable_cpu_data() {
+template <typename Dtype> Dtype *Blob<Dtype>::mutable_cpu_data() {
   CHECK(data_);
-  return static_cast<Dtype*>(data_->mutable_cpu_data());
+  return static_cast<Dtype *>(data_->mutable_cpu_data());
 }
 
-template <typename Dtype>
-Dtype* Blob<Dtype>::mutable_gpu_data() {
+template <typename Dtype> Dtype *Blob<Dtype>::mutable_gpu_data() {
   CHECK(data_);
-  return static_cast<Dtype*>(data_->mutable_gpu_data());
+  return static_cast<Dtype *>(data_->mutable_gpu_data());
 }
 
-template <typename Dtype>
-Dtype* Blob<Dtype>::mutable_cpu_diff() {
+template <typename Dtype> Dtype *Blob<Dtype>::mutable_cpu_diff() {
   CHECK(diff_);
-  return static_cast<Dtype*>(diff_->mutable_cpu_data());
+  return static_cast<Dtype *>(diff_->mutable_cpu_data());
 }
 
-template <typename Dtype>
-Dtype* Blob<Dtype>::mutable_gpu_diff() {
+template <typename Dtype> Dtype *Blob<Dtype>::mutable_gpu_diff() {
   CHECK(diff_);
-  return static_cast<Dtype*>(diff_->mutable_gpu_data());
+  return static_cast<Dtype *>(diff_->mutable_gpu_data());
 }
 
-template <typename Dtype>
-void Blob<Dtype>::ShareData(const Blob& other) {
+template <typename Dtype> void Blob<Dtype>::ShareData(const Blob &other) {
   CHECK_EQ(count_, other.count());
   data_ = other.data();
 }
 
-template <typename Dtype>
-void Blob<Dtype>::ShareDiff(const Blob& other) {
+template <typename Dtype> void Blob<Dtype>::ShareDiff(const Blob &other) {
   CHECK_EQ(count_, other.count());
   diff_ = other.diff();
 }
@@ -178,23 +180,22 @@ void Blob<Dtype>::ShareDiff(const Blob& other) {
 template <> void Blob<unsigned int>::Update() { NOT_IMPLEMENTED; }
 template <> void Blob<int>::Update() { NOT_IMPLEMENTED; }
 
-template <typename Dtype>
-void Blob<Dtype>::Update() {
+template <typename Dtype> void Blob<Dtype>::Update() {
   // We will perform update based on where the data is located.
   switch (data_->head()) {
   case SyncedMemory::HEAD_AT_CPU:
     // perform computation on CPU
     caffe_axpy<Dtype>(count_, Dtype(-1),
-        static_cast<const Dtype*>(diff_->cpu_data()),
-        static_cast<Dtype*>(data_->mutable_cpu_data()));
+                      static_cast<const Dtype *>(diff_->cpu_data()),
+                      static_cast<Dtype *>(data_->mutable_cpu_data()));
     break;
   case SyncedMemory::HEAD_AT_GPU:
   case SyncedMemory::SYNCED:
 #ifndef CPU_ONLY
     // perform computation on GPU
     caffe_gpu_axpy<Dtype>(Caffe::GetDeviceId(), count_, Dtype(-1),
-        static_cast<const Dtype*>(diff_->gpu_data()),
-        static_cast<Dtype*>(data_->mutable_gpu_data()));
+                          static_cast<const Dtype *>(diff_->gpu_data()),
+                          static_cast<Dtype *>(data_->mutable_gpu_data()));
 #else
     NO_GPU;
 #endif
@@ -204,27 +205,29 @@ void Blob<Dtype>::Update() {
   }
 }
 
-template <typename Dtype>
-void Blob<Dtype>::UpdatePSTable() {
+template <typename Dtype> void Blob<Dtype>::UpdatePSTable() {
   CHECK_EQ(blob_mode_, BlobProto_BlobMode_GLOBAL);
 
   // flush diff_
-  const Dtype* update = static_cast<const Dtype*>(diff_->cpu_data());
-  int update_idx = 0;  
+  const Dtype *update = static_cast<const Dtype *>(diff_->cpu_data());
+  int update_idx = 0;
   for (int r = 0; r < util::Context::num_rows_per_table(); ++r) {
     petuum::UpdateBatch<Dtype> update_batch(global_table_row_capacity_);
     for (int i = 0; i < global_table_row_capacity_; ++i) {
       update_batch.UpdateSet(i, i, Dtype(-1) * update[update_idx]);
       ++update_idx;
-      if (update_idx >= count_) { break; }
+      if (update_idx >= count_) {
+        break;
+      }
     }
     global_table_ptr_->BatchInc(r, update_batch);
-    if (update_idx >= count_) { break; }
+    if (update_idx >= count_) {
+      break;
+    }
   }
 }
 
-template <typename Dtype>
-void Blob<Dtype>::UpdatePSTable(const Dtype* update) {
+template <typename Dtype> void Blob<Dtype>::UpdatePSTable(const Dtype *update) {
   CHECK_EQ(blob_mode_, BlobProto_BlobMode_GLOBAL);
 
   int update_idx = 0;
@@ -233,37 +236,42 @@ void Blob<Dtype>::UpdatePSTable(const Dtype* update) {
     for (int i = 0; i < global_table_row_capacity_; ++i) {
       update_batch.UpdateSet(i, i, Dtype(-1) * update[update_idx]);
       ++update_idx;
-      if (update_idx >= count_) { break; }
+      if (update_idx >= count_) {
+        break;
+      }
     }
     global_table_ptr_->BatchInc(r, update_batch);
-    if (update_idx >= count_) { break; }
+    if (update_idx >= count_) {
+      break;
+    }
   }
 }
 
-template <typename Dtype>
-void Blob<Dtype>::SyncWithPSTable(const int clock) {
+template <typename Dtype> void Blob<Dtype>::SyncWithPSTable(const int clock) {
   CHECK_EQ(blob_mode_, BlobProto_BlobMode_GLOBAL);
-  Dtype* data_temp = ReadPSTable(clock);
+  Dtype *data_temp = ReadPSTable(clock);
   data_->set_cpu_ps_data(data_temp);
 }
 
 template <typename Dtype>
-Dtype* Blob<Dtype>::ReadPSTable(const int clock) const {
+Dtype *Blob<Dtype>::ReadPSTable(const int clock) const {
   CHECK(global_table_ptr_);
-  
-  void* data_temp;
-  CaffeMallocHost(&data_temp, capacity_ * sizeof(Dtype));
-  Dtype* data = (Dtype*)data_temp;
 
-  vector<vector<Dtype> > row_caches(util::Context::num_rows_per_table());
+  void *data_temp;
+  CaffeMallocHost(&data_temp, capacity_ * sizeof(Dtype));
+  Dtype *data = (Dtype *)data_temp;
+
+  vector<vector<Dtype>> row_caches(util::Context::num_rows_per_table());
   for (int r_idx = 0; r_idx < util::Context::num_rows_per_table(); ++r_idx) {
     row_caches[r_idx].resize(global_table_row_capacity_);
     petuum::RowAccessor row_acc;
-    //LOG(INFO) << "get clock " << clock << " count " << count_ << " height " << height_ << " width " << width_ << " channel " << channels_ << " num " << num_;
-    const auto& r = global_table_ptr_->template Get<petuum::DenseRow<Dtype> >(
+    // LOG(INFO) << "get clock " << clock << " count " << count_ << " height "
+    // << height_ << " width " << width_ << " channel " << channels_ << " num "
+    // << num_;
+    const auto &r = global_table_ptr_->template Get<petuum::DenseRow<Dtype>>(
         r_idx, &row_acc, clock);
     r.CopyToVector(&row_caches[r_idx]);
-    //LOG(INFO) << "get done";
+    // LOG(INFO) << "get done";
   }
 
   int data_idx = 0;
@@ -271,16 +279,20 @@ Dtype* Blob<Dtype>::ReadPSTable(const int clock) const {
     for (int i = 0; i < global_table_row_capacity_; ++i) {
       data[data_idx] = row_caches[r_idx][i];
       ++data_idx;
-      if (data_idx >= count_) { break; }
+      if (data_idx >= count_) {
+        break;
+      }
     }
-    if (data_idx >= count_) { break; }
-  } 
+    if (data_idx >= count_) {
+      break;
+    }
+  }
 
   // release memory
   for (int r_idx = 0; r_idx < util::Context::num_rows_per_table(); ++r_idx) {
     vector<Dtype>().swap(row_caches[r_idx]);
   }
-  vector<vector<Dtype> >().swap(row_caches);
+  vector<vector<Dtype>>().swap(row_caches);
 
   return data;
 }
@@ -295,9 +307,10 @@ template <> int Blob<int>::asum_data() const {
   return 0;
 }
 
-template <typename Dtype>
-Dtype Blob<Dtype>::asum_data() const {
-  if (!data_) { return 0; }
+template <typename Dtype> Dtype Blob<Dtype>::asum_data() const {
+  if (!data_) {
+    return 0;
+  }
   switch (data_->head()) {
   case SyncedMemory::HEAD_AT_CPU:
     return caffe_cpu_asum(count_, cpu_data());
@@ -330,9 +343,10 @@ template <> int Blob<int>::asum_diff() const {
   return 0;
 }
 
-template <typename Dtype>
-Dtype Blob<Dtype>::asum_diff() const {
-  if (!diff_) { return 0; }
+template <typename Dtype> Dtype Blob<Dtype>::asum_diff() const {
+  if (!diff_) {
+    return 0;
+  }
   switch (diff_->head()) {
   case SyncedMemory::HEAD_AT_CPU:
     return caffe_cpu_asum(count_, cpu_diff());
@@ -356,7 +370,7 @@ Dtype Blob<Dtype>::asum_diff() const {
 }
 
 template <typename Dtype>
-void Blob<Dtype>::CopyFrom(const Blob& source, bool copy_diff, bool reshape) {
+void Blob<Dtype>::CopyFrom(const Blob &source, bool copy_diff, bool reshape) {
   if (blob_mode_ == BlobProto_BlobMode_GLOBAL) {
     if (!copy_diff) {
       LOG(FATAL) << "Currently Petuum Caffe does not support "
@@ -375,19 +389,19 @@ void Blob<Dtype>::CopyFrom(const Blob& source, bool copy_diff, bool reshape) {
   case Caffe::GPU:
     if (copy_diff) {
       caffe_copy(count_, source.gpu_diff(),
-          static_cast<Dtype*>(diff_->mutable_gpu_data()));
+                 static_cast<Dtype *>(diff_->mutable_gpu_data()));
     } else {
       caffe_copy(count_, source.gpu_data(),
-          static_cast<Dtype*>(data_->mutable_gpu_data()));
+                 static_cast<Dtype *>(data_->mutable_gpu_data()));
     }
     break;
   case Caffe::CPU:
     if (copy_diff) {
       caffe_copy(count_, source.cpu_diff(),
-          static_cast<Dtype*>(diff_->mutable_cpu_data()));
+                 static_cast<Dtype *>(diff_->mutable_cpu_data()));
     } else {
       caffe_copy(count_, source.cpu_data(),
-          static_cast<Dtype*>(data_->mutable_cpu_data()));
+                 static_cast<Dtype *>(data_->mutable_cpu_data()));
     }
     break;
   default:
@@ -396,13 +410,13 @@ void Blob<Dtype>::CopyFrom(const Blob& source, bool copy_diff, bool reshape) {
 }
 
 template <typename Dtype>
-void Blob<Dtype>::FromProto(const BlobProto& proto, const bool init_ps_table) {
+void Blob<Dtype>::FromProto(const BlobProto &proto, const bool init_ps_table) {
   Reshape(proto.num(), proto.channels(), proto.height(), proto.width());
 
   if (blob_mode_ == BlobProto_BlobMode_GLOBAL) {
     if (init_ps_table) { // initialize ps table
       // update values in ps table
-      Dtype* data_vec = ReadPSTable(0);
+      Dtype *data_vec = ReadPSTable(0);
       for (int i = 0; i < count_; ++i) {
         data_vec[i] = data_vec[i] - proto.data(i);
       }
@@ -410,15 +424,15 @@ void Blob<Dtype>::FromProto(const BlobProto& proto, const bool init_ps_table) {
       UpdatePSTable();
     }
   } else {
-    //copy data
-    Dtype* data_vec = mutable_cpu_data();
+    // copy data
+    Dtype *data_vec = mutable_cpu_data();
     for (int i = 0; i < count_; ++i) {
       data_vec[i] = proto.data(i);
     }
   }
 
   if (proto.diff_size() > 0) {
-    Dtype* diff_vec = mutable_cpu_diff();
+    Dtype *diff_vec = mutable_cpu_diff();
     for (int i = 0; i < count_; ++i) {
       diff_vec[i] = proto.diff(i);
     }
@@ -426,7 +440,7 @@ void Blob<Dtype>::FromProto(const BlobProto& proto, const bool init_ps_table) {
 }
 
 template <typename Dtype>
-void Blob<Dtype>::ToProto(BlobProto* proto, bool write_diff) const {
+void Blob<Dtype>::ToProto(BlobProto *proto, bool write_diff) const {
   proto->set_num(num_);
   proto->set_channels(channels_);
   proto->set_height(height_);
@@ -435,12 +449,12 @@ void Blob<Dtype>::ToProto(BlobProto* proto, bool write_diff) const {
   proto->set_global_id(global_id_);
   proto->clear_data();
   proto->clear_diff();
-  const Dtype* data_vec = cpu_data();
+  const Dtype *data_vec = cpu_data();
   for (int i = 0; i < count_; ++i) {
     proto->add_data(data_vec[i]);
   }
   if (write_diff) {
-    const Dtype* diff_vec = cpu_diff();
+    const Dtype *diff_vec = cpu_diff();
     for (int i = 0; i < count_; ++i) {
       proto->add_diff(diff_vec[i]);
     }
@@ -451,5 +465,4 @@ INSTANTIATE_CLASS(Blob);
 template class Blob<int>;
 template class Blob<unsigned int>;
 
-}  // namespace caffe
-
+} // namespace caffe

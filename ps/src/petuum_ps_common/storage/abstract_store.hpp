@@ -10,14 +10,13 @@ namespace petuum {
 
 // V is an arithmetic type. V is the data type and also the update type.
 // V needs to be a numeric type.
-template<typename V>
-class AbstractStore {
+template <typename V> class AbstractStore {
 public:
-  AbstractStore() { }
-  virtual ~AbstractStore() { }
+  AbstractStore() {}
+  virtual ~AbstractStore() {}
 
-  AbstractStore(const AbstractStore<V> &other) { }
-  AbstractStore<V> & operator = (const AbstractStore<V> &other) { }
+  AbstractStore(const AbstractStore<V> &other) {}
+  AbstractStore<V> &operator=(const AbstractStore<V> &other) {}
 
   virtual void Init(size_t capacity) = 0;
   virtual size_t SerializedSize() const = 0;
@@ -31,7 +30,7 @@ public:
     Deserialize(data, num_bytes);
   }
 
-  virtual V Get (int32_t col_id) const = 0;
+  virtual V Get(int32_t col_id) const = 0;
   virtual void Inc(int32_t col_id, V delta) = 0;
 
   virtual const void CopyToVector(void *to) const = 0;
@@ -54,5 +53,4 @@ public:
 
   static_assert(std::is_pod<V>::value, "V must be POD");
 };
-
 }

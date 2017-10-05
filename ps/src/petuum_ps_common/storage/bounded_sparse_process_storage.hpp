@@ -32,7 +32,7 @@ public:
   ~BoundedSparseProcessStorage();
 
   // Find row row_id. Return true if found, otherwise false.
-  ClientRow *Find(int32_t row_id, RowAccessor* row_accessor);
+  ClientRow *Find(int32_t row_id, RowAccessor *row_accessor);
 
   // Check if a row exists, does not count as one access
   bool Find(int32_t row_id);
@@ -45,14 +45,16 @@ public:
   // the capacity is larger than or equal to the number of concurrent insertion
   // threads, otherwise the insertion thread may get stuck in an infinite loop
   // during eviction.
-  // Since eviction may only happen to rows that are not being referenced, therefore
-  // we require that capacity - number of referenced rows to be larger than or equal
+  // Since eviction may only happen to rows that are not being referenced,
+  // therefore
+  // we require that capacity - number of referenced rows to be larger than or
+  // equal
   // to the number of concurrent insertion threads.
-  bool Insert(int32_t row_id, ClientRow* client_row);
+  bool Insert(int32_t row_id, ClientRow *client_row);
 
 private:
   // Evict one inactive row using CLOCK replacement algorithm.
-  std::pair<int32_t, ClientRow*> EvictOneRow();
+  std::pair<int32_t, ClientRow *> EvictOneRow();
 
   // Number of rows allowed in this storage.
   size_t capacity_;
@@ -61,7 +63,7 @@ private:
 
   // The key type is row_id (int32_t), and the value type consists of
   // a ClientRow* pointer and a slot index (int32_t).
-  cuckoohash_map<int32_t, std::pair<ClientRow*, int32_t> > storage_map_;
+  cuckoohash_map<int32_t, std::pair<ClientRow *, int32_t>> storage_map_;
 
   ClockLRU clock_lru_;
 
@@ -69,5 +71,4 @@ private:
   StripedLock<int32_t> locks_;
 };
 
-
-}  // namespace petuum
+} // namespace petuum

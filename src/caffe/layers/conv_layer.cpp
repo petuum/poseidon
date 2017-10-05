@@ -9,25 +9,26 @@
 namespace caffe {
 
 template <typename Dtype>
-void ConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-    vector<Blob<Dtype>*>* top, const bool init_ps, int* num_tables,
-    map<string, vector<int> >* layer_name_to_blob_global_idx) {
+void ConvolutionLayer<Dtype>::LayerSetUp(
+    const vector<Blob<Dtype> *> &bottom, vector<Blob<Dtype> *> *top,
+    const bool init_ps, int *num_tables,
+    map<string, vector<int>> *layer_name_to_blob_global_idx) {
   string name = this->layer_param_.name();
   // Configure the kernel size, padding, stride, and inputs.
   ConvolutionParameter conv_param = this->layer_param_.convolution_param();
   CHECK(!conv_param.has_kernel_size() !=
-      !(conv_param.has_kernel_h() && conv_param.has_kernel_w()))
+        !(conv_param.has_kernel_h() && conv_param.has_kernel_w()))
       << "Filter size is kernel_size OR kernel_h and kernel_w; not both";
   CHECK(conv_param.has_kernel_size() ||
-      (conv_param.has_kernel_h() && conv_param.has_kernel_w()))
+        (conv_param.has_kernel_h() && conv_param.has_kernel_w()))
       << "For non-square filters both kernel_h and kernel_w are required.";
-  CHECK((!conv_param.has_pad() && conv_param.has_pad_h()
-      && conv_param.has_pad_w())
-      || (!conv_param.has_pad_h() && !conv_param.has_pad_w()))
+  CHECK((!conv_param.has_pad() && conv_param.has_pad_h() &&
+         conv_param.has_pad_w()) ||
+        (!conv_param.has_pad_h() && !conv_param.has_pad_w()))
       << "pad is pad OR pad_h and pad_w are required.";
-  CHECK((!conv_param.has_stride() && conv_param.has_stride_h()
-      && conv_param.has_stride_w())
-      || (!conv_param.has_stride_h() && !conv_param.has_stride_w()))
+  CHECK((!conv_param.has_stride() && conv_param.has_stride_h() &&
+         conv_param.has_stride_w()) ||
+        (!conv_param.has_stride_h() && !conv_param.has_stride_w()))
       << "Stride is stride OR stride_h and stride_w are required.";
   if (conv_param.has_kernel_size()) {
     kernel_h_ = kernel_w_ = conv_param.kernel_size();
@@ -69,20 +70,20 @@ void ConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       if (init_ps) {
         this->blob_global_id_.resize(2);
         (*layer_name_to_blob_global_idx)[name] = vector<int>(2);
-      }  
+      }
     } else {
       this->blobs_.resize(1);
       if (init_ps) {
         this->blob_global_id_.resize(1);
         (*layer_name_to_blob_global_idx)[name] = vector<int>(1);
-      }  
+      }
     }
     // Initialize and fill the weights:
     // output channels x input channels per-group x kernel height x kernel width
     int weight_table_id = (init_ps ? *num_tables : -1);
-    this->blobs_[0].reset(new Blob<Dtype>(
-        num_output_, channels_ / group_, kernel_h_, kernel_w_, 
-        BlobProto_BlobMode_GLOBAL, weight_table_id));
+    this->blobs_[0].reset(
+        new Blob<Dtype>(num_output_, channels_ / group_, kernel_h_, kernel_w_,
+                        BlobProto_BlobMode_GLOBAL, weight_table_id));
     if (init_ps) {
       // Create the weight table
       this->blobs_[0]->CreatePSTable();
@@ -95,8 +96,8 @@ void ConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     // 1 x 1 x 1 x output channels
     if (bias_term_) {
       int bias_table_id = (init_ps ? *num_tables : -1);
-      this->blobs_[1].reset(new Blob<Dtype>(1, 1, 1, num_output_, 
-          BlobProto_BlobMode_GLOBAL, bias_table_id));
+      this->blobs_[1].reset(new Blob<Dtype>(
+          1, 1, 1, num_output_, BlobProto_BlobMode_GLOBAL, bias_table_id));
       if (init_ps) {
         // Create the bias table
         this->blobs_[1]->CreatePSTable();
@@ -111,13 +112,13 @@ void ConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-void ConvolutionLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top) {
+void ConvolutionLayer<Dtype>::Reshape(const vector<Blob<Dtype> *> &bottom,
+                                      vector<Blob<Dtype> *> *top) {
   num_ = bottom[0]->num();
   height_ = bottom[0]->height();
   width_ = bottom[0]->width();
   CHECK_EQ(bottom[0]->channels(), channels_) << "Input size incompatible with"
-    " convolution kernel.";
+                                                " convolution kernel.";
   // TODO: generalize to handle inputs of different shapes.
   for (int bottom_id = 1; bottom_id < bottom.size(); ++bottom_id) {
     CHECK_EQ(num_, bottom[bottom_id]->num()) << "Inputs must have same num.";
@@ -129,8 +130,7 @@ void ConvolutionLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
         << "Inputs must have same width.";
   }
   // Shape the tops.
-  height_out_ =
-      (height_ + 2 * pad_h_ - kernel_h_) / stride_h_ + 1;
+  height_out_ = (height_ + 2 * pad_h_ - kernel_h_) / stride_h_ + 1;
   width_out_ = (width_ + 2 * pad_w_ - kernel_w_) / stride_w_ + 1;
   for (int top_id = 0; top_id < top->size(); ++top_id) {
     (*top)[top_id]->Reshape(num_, num_output_, height_out_, width_out_);
@@ -142,8 +142,8 @@ void ConvolutionLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   N_ = height_out_ * width_out_;
   // The im2col result buffer will only hold one image at a time to avoid
   // overly large memory usage.
-  col_buffer_.Reshape(
-      1, channels_ * kernel_h_ * kernel_w_, height_out_, width_out_);
+  col_buffer_.Reshape(1, channels_ * kernel_h_ * kernel_w_, height_out_,
+                      width_out_);
   for (int top_id = 0; top_id < top->size(); ++top_id) {
     (*top)[top_id]->Reshape(num_, num_output_, height_out_, width_out_);
   }
@@ -155,50 +155,52 @@ void ConvolutionLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-void ConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top) {
+void ConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype> *> &bottom,
+                                          vector<Blob<Dtype> *> *top) {
   for (int i = 0; i < bottom.size(); ++i) {
-    const Dtype* bottom_data = bottom[i]->cpu_data();
-    Dtype* top_data = (*top)[i]->mutable_cpu_data();
-    Dtype* col_data = col_buffer_.mutable_cpu_data();
-    const Dtype* weight = this->blobs_[0]->cpu_data();
-    int weight_offset = M_ * K_;  // number of filter parameters in a group
-    int col_offset = K_ * N_;  // number of values in an input region / column
-    int top_offset = M_ * N_;  // number of values in an output region / column
+    const Dtype *bottom_data = bottom[i]->cpu_data();
+    Dtype *top_data = (*top)[i]->mutable_cpu_data();
+    Dtype *col_data = col_buffer_.mutable_cpu_data();
+    const Dtype *weight = this->blobs_[0]->cpu_data();
+    int weight_offset = M_ * K_; // number of filter parameters in a group
+    int col_offset = K_ * N_;    // number of values in an input region / column
+    int top_offset = M_ * N_; // number of values in an output region / column
     for (int n = 0; n < num_; ++n) {
       // im2col transformation: unroll input regions for filtering
       // into column matrix for multplication.
-      im2col_cpu(bottom_data + bottom[i]->offset(n), channels_, height_,
-          width_, kernel_h_, kernel_w_, pad_h_, pad_w_, stride_h_, stride_w_,
-          col_data);
+      im2col_cpu(bottom_data + bottom[i]->offset(n), channels_, height_, width_,
+                 kernel_h_, kernel_w_, pad_h_, pad_w_, stride_h_, stride_w_,
+                 col_data);
       // Take inner products for groups.
       for (int g = 0; g < group_; ++g) {
-        caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_, K_,
-          (Dtype)1., weight + weight_offset * g, col_data + col_offset * g,
-          (Dtype)0., top_data + (*top)[i]->offset(n) + top_offset * g);
+        caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_, K_, (Dtype)1.,
+                              weight + weight_offset * g,
+                              col_data + col_offset * g, (Dtype)0.,
+                              top_data + (*top)[i]->offset(n) + top_offset * g);
       }
       // Add bias.
       if (bias_term_) {
-        caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num_output_,
-            N_, 1, (Dtype)1., this->blobs_[1]->cpu_data(),
-            bias_multiplier_.cpu_data(),
-            (Dtype)1., top_data + (*top)[i]->offset(n));
+        caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num_output_, N_, 1,
+                              (Dtype)1., this->blobs_[1]->cpu_data(),
+                              bias_multiplier_.cpu_data(), (Dtype)1.,
+                              top_data + (*top)[i]->offset(n));
       }
     }
   }
 }
 
 template <typename Dtype>
-void ConvolutionLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom) {
-  const Dtype* weight = NULL;
-  Dtype* weight_diff = NULL;
+void ConvolutionLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype> *> &top,
+                                           const vector<bool> &propagate_down,
+                                           vector<Blob<Dtype> *> *bottom) {
+  const Dtype *weight = NULL;
+  Dtype *weight_diff = NULL;
   if (this->param_propagate_down_[0]) {
     weight = this->blobs_[0]->cpu_data();
     weight_diff = this->blobs_[0]->mutable_cpu_diff();
     caffe_set(this->blobs_[0]->count(), Dtype(0), weight_diff);
   }
-  Dtype* bias_diff = NULL;
+  Dtype *bias_diff = NULL;
   if (bias_term_ && this->param_propagate_down_[1]) {
     bias_diff = this->blobs_[1]->mutable_cpu_diff();
     caffe_set(this->blobs_[1]->count(), Dtype(0), bias_diff);
@@ -207,38 +209,38 @@ void ConvolutionLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   const int col_offset = K_ * N_;
   const int top_offset = M_ * N_;
   for (int i = 0; i < top.size(); ++i) {
-    const Dtype* top_diff = NULL;
+    const Dtype *top_diff = NULL;
     // Bias gradient, if necessary.
     if (bias_term_ && this->param_propagate_down_[1]) {
       top_diff = top[i]->cpu_diff();
       for (int n = 0; n < num_; ++n) {
-        caffe_cpu_gemv<Dtype>(CblasNoTrans, num_output_, N_,
-            1., top_diff + top[0]->offset(n),
-            bias_multiplier_.cpu_data(), 1.,
-            bias_diff);
+        caffe_cpu_gemv<Dtype>(CblasNoTrans, num_output_, N_, 1.,
+                              top_diff + top[0]->offset(n),
+                              bias_multiplier_.cpu_data(), 1., bias_diff);
       }
     }
     if (this->param_propagate_down_[0] || propagate_down[i]) {
       if (!top_diff) {
         top_diff = top[i]->cpu_diff();
       }
-      Dtype* col_data = col_buffer_.mutable_cpu_data();
-      Dtype* col_diff = col_buffer_.mutable_cpu_diff();
-      const Dtype* bottom_data = (*bottom)[i]->cpu_data();
-      Dtype* bottom_diff = (*bottom)[i]->mutable_cpu_diff();
+      Dtype *col_data = col_buffer_.mutable_cpu_data();
+      Dtype *col_diff = col_buffer_.mutable_cpu_diff();
+      const Dtype *bottom_data = (*bottom)[i]->cpu_data();
+      Dtype *bottom_diff = (*bottom)[i]->mutable_cpu_diff();
       for (int n = 0; n < num_; ++n) {
         // Since we saved memory in the forward pass by not storing all col
         // data, we will need to recompute them.
         im2col_cpu(bottom_data + (*bottom)[i]->offset(n), channels_, height_,
-                   width_, kernel_h_, kernel_w_, pad_h_, pad_w_,
-                   stride_h_, stride_w_, col_data);
+                   width_, kernel_h_, kernel_w_, pad_h_, pad_w_, stride_h_,
+                   stride_w_, col_data);
         // gradient w.r.t. weight. Note that we will accumulate diffs.
         if (this->param_propagate_down_[0]) {
           for (int g = 0; g < group_; ++g) {
             caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, K_, N_,
-                (Dtype)1., top_diff + top[i]->offset(n) + top_offset * g,
-                col_data + col_offset * g, (Dtype)1.,
-                weight_diff + weight_offset * g);
+                                  (Dtype)1.,
+                                  top_diff + top[i]->offset(n) + top_offset * g,
+                                  col_data + col_offset * g, (Dtype)1.,
+                                  weight_diff + weight_offset * g);
           }
         }
         // gradient w.r.t. bottom data, if necessary.
@@ -248,14 +250,14 @@ void ConvolutionLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
           }
           for (int g = 0; g < group_; ++g) {
             caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, K_, N_, M_,
-                (Dtype)1., weight + weight_offset * g,
-                top_diff + top[i]->offset(n) + top_offset * g,
-                (Dtype)0., col_diff + col_offset * g);
+                                  (Dtype)1., weight + weight_offset * g,
+                                  top_diff + top[i]->offset(n) + top_offset * g,
+                                  (Dtype)0., col_diff + col_offset * g);
           }
           // col2im back to the data
-          col2im_cpu(col_diff, channels_, height_, width_,
-              kernel_h_, kernel_w_, pad_h_, pad_w_,
-              stride_h_, stride_w_, bottom_diff + (*bottom)[i]->offset(n));
+          col2im_cpu(col_diff, channels_, height_, width_, kernel_h_, kernel_w_,
+                     pad_h_, pad_w_, stride_h_, stride_w_,
+                     bottom_diff + (*bottom)[i]->offset(n));
         }
       }
     }
@@ -268,4 +270,4 @@ STUB_GPU(ConvolutionLayer);
 
 INSTANTIATE_CLASS(ConvolutionLayer);
 
-}  // namespace caffe
+} // namespace caffe

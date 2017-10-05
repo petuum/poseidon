@@ -8,12 +8,12 @@ void MsgTracker::AddEntity(int32_t id) {
 }
 
 bool MsgTracker::CheckSendAll() {
-  for (const auto & info_pair : info_map_) {
-    if ((info_pair.second.max_sent_seq_ - info_pair.second.max_ack_seq_)
-        >= max_num_penging_msgs_) {
-      //LOG(INFO) << "-";
-      //for (const auto & info_pair_check : info_map_) {
-      //LOG(INFO) << "*id:" << info_pair_check.first
+  for (const auto &info_pair : info_map_) {
+    if ((info_pair.second.max_sent_seq_ - info_pair.second.max_ack_seq_) >=
+        max_num_penging_msgs_) {
+      // LOG(INFO) << "-";
+      // for (const auto & info_pair_check : info_map_) {
+      // LOG(INFO) << "*id:" << info_pair_check.first
       //          << " sent:" << info_pair_check.second.max_sent_seq_
       //          << " ack:" << info_pair_check.second.max_ack_seq_;
       //}
@@ -24,7 +24,7 @@ bool MsgTracker::CheckSendAll() {
 }
 
 bool MsgTracker::PendingAcks() {
-  for (const auto & info_pair : info_map_) {
+  for (const auto &info_pair : info_map_) {
     if ((info_pair.second.max_sent_seq_ > info_pair.second.max_ack_seq_))
       return true;
   }
@@ -71,19 +71,17 @@ uint64_t MsgTracker::GetRecvSeq(int32_t id) {
   auto info_iter = info_map_.find(id);
   CHECK(info_iter != info_map_.end());
 
-  if (info_iter->second.max_recv_seq_
-      == info_iter->second.max_acked_seq_)
+  if (info_iter->second.max_recv_seq_ == info_iter->second.max_acked_seq_)
     return 0;
 
   return info_iter->second.max_recv_seq_;
 }
 
 bool MsgTracker::AllSentAcked() {
-  for (const auto & info_pair : info_map_) {
+  for (const auto &info_pair : info_map_) {
     if ((info_pair.second.max_sent_seq_ != info_pair.second.max_ack_seq_))
       return false;
   }
   return true;
 }
-
 }

@@ -25,15 +25,16 @@ public:
   AbstractRow *GetRow(int32_t row_id);
   void InsertRow(int32_t row_id, const AbstractRow *to_insert);
   void Inc(int32_t row_id, int32_t column_id, const void *delta);
-  void BatchInc(int32_t row_id, const int32_t *column_ids,
-                const void *deltas, int32_t num_updates);
+  void BatchInc(int32_t row_id, const int32_t *column_ids, const void *deltas,
+                int32_t num_updates);
 
   void DenseBatchInc(int32_t row_id, const void *updates, int32_t index_st,
                      int32_t num_updates);
 
-  void FlushCache(AbstractProcessStorage &process_storage, AbstractOpLog &table_oplog,
-		  const AbstractRow *sample_row);
-  void FlushCacheOpLog(AbstractProcessStorage &process_storage, AbstractOpLog &table_oplog,
+  void FlushCache(AbstractProcessStorage &process_storage,
+                  AbstractOpLog &table_oplog, const AbstractRow *sample_row);
+  void FlushCacheOpLog(AbstractProcessStorage &process_storage,
+                       AbstractOpLog &table_oplog,
                        const AbstractRow *sample_row);
 
   size_t IndexUpdateAndGetCount(int32_t row_id, size_t num_updates = 1);
@@ -41,14 +42,12 @@ public:
 
   void AddToUpdateCount(size_t num_updates);
 
-  size_t get_update_count() {
-    return update_count_;
-  }
+  size_t get_update_count() { return update_count_; }
 
 private:
-  std::vector<std::unordered_set<int32_t> > oplog_index_;
-  boost::unordered_map<int32_t, AbstractRow* > row_storage_;
-  boost::unordered_map<int32_t, AbstractRowOpLog* > oplog_map_;
+  std::vector<std::unordered_set<int32_t>> oplog_index_;
+  boost::unordered_map<int32_t, AbstractRow *> row_storage_;
+  boost::unordered_map<int32_t, AbstractRowOpLog *> oplog_map_;
   const AbstractRow *sample_row_;
 
   size_t update_count_;
@@ -58,18 +57,18 @@ private:
   typedef void (*UpdateOpLogClockFunc)(AbstractRowOpLog *row_oplog);
 
   static void UpdateOpLogClockSSPAggr(AbstractRowOpLog *row_oplog);
-  static void UpdateOpLogClockNoOp(AbstractRowOpLog *row_oplog) { }
+  static void UpdateOpLogClockNoOp(AbstractRowOpLog *row_oplog) {}
   UpdateOpLogClockFunc UpdateOpLogClock_;
 
   CreateRowOpLog::CreateRowOpLogFunc CreateRowOpLog_;
 
-  void ApplyThreadOpLogSSP(
-      OpLogAccessor *oplog_accessor, ClientRow *client_row,
-      AbstractRowOpLog *row_oplog, int32_t row_id);
+  void ApplyThreadOpLogSSP(OpLogAccessor *oplog_accessor, ClientRow *client_row,
+                           AbstractRowOpLog *row_oplog, int32_t row_id);
 
-  void ApplyThreadOpLogGetImportance(
-      OpLogAccessor *oplog_accessor, ClientRow *client_row,
-      AbstractRowOpLog *row_oplog, int32_t row_id);
+  void ApplyThreadOpLogGetImportance(OpLogAccessor *oplog_accessor,
+                                     ClientRow *client_row,
+                                     AbstractRowOpLog *row_oplog,
+                                     int32_t row_id);
 
   typedef void (ThreadTable::*ApplyThreadOpLogFunc)(
       OpLogAccessor *oplog_accessor, ClientRow *client_row,
@@ -77,5 +76,4 @@ private:
 
   ThreadTable::ApplyThreadOpLogFunc ApplyThreadOpLog_;
 };
-
 }

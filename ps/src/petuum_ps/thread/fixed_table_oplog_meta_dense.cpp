@@ -1,14 +1,12 @@
 #include <petuum_ps/thread/fixed_table_oplog_meta_dense.hpp>
 
 namespace petuum {
-FixedTableOpLogMetaDense::FixedTableOpLogMetaDense(const AbstractRow *sample_row,
-                                                   size_t table_size):
-    sample_row_(sample_row),
-    meta_vec_(table_size, RowOpLogMeta()),
-    num_valid_oplogs_(0),
-    num_new_oplog_metas_(0) { }
+FixedTableOpLogMetaDense::FixedTableOpLogMetaDense(
+    const AbstractRow *sample_row, size_t table_size)
+    : sample_row_(sample_row), meta_vec_(table_size, RowOpLogMeta()),
+      num_valid_oplogs_(0), num_new_oplog_metas_(0) {}
 
-FixedTableOpLogMetaDense::~FixedTableOpLogMetaDense() { }
+FixedTableOpLogMetaDense::~FixedTableOpLogMetaDense() {}
 
 void FixedTableOpLogMetaDense::InsertMergeRowOpLogMeta(
     int32_t row_id, const RowOpLogMeta &row_oplog_meta) {
@@ -27,15 +25,14 @@ size_t FixedTableOpLogMetaDense::GetCleanNumNewOpLogMeta() {
   return tmp;
 }
 
-void FixedTableOpLogMetaDense::Prepare(size_t num_rows_to_send) { }
+void FixedTableOpLogMetaDense::Prepare(size_t num_rows_to_send) {}
 
 int32_t FixedTableOpLogMetaDense::GetAndClearNextInOrder() {
   if (num_valid_oplogs_ == 0)
     return -1;
 
   while (meta_iter_ != meta_vec_.end()) {
-    while (meta_iter_->get_clock() == -1
-           && meta_iter_ != meta_vec_.end()) {
+    while (meta_iter_->get_clock() == -1 && meta_iter_ != meta_vec_.end()) {
       meta_iter_++;
     }
 
@@ -68,13 +65,13 @@ int32_t FixedTableOpLogMetaDense::GetAndClearNextUptoClock() {
 
   for (; meta_iter_ != meta_vec_.end(); ++meta_iter_) {
     int32_t clock_to_check = meta_iter_->get_clock();
-    if (clock_to_check >= 0
-        && clock_to_check <= clock_to_clear_) {
+    if (clock_to_check >= 0 && clock_to_check <= clock_to_clear_) {
       break;
     }
   }
 
-  if (meta_iter_ == meta_vec_.end()) return -1;
+  if (meta_iter_ == meta_vec_.end())
+    return -1;
 
   int32_t row_id = meta_iter_ - meta_vec_.begin();
   meta_iter_->invalidate_clock();
@@ -86,5 +83,4 @@ int32_t FixedTableOpLogMetaDense::GetAndClearNextUptoClock() {
 size_t FixedTableOpLogMetaDense::GetNumRowOpLogs() const {
   return num_valid_oplogs_;
 }
-
 }

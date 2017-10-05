@@ -50,22 +50,16 @@ public:
     int num_bytes_interproc_send_buff_;
     int num_bytes_interproc_recv_buff_;
 
-    Config():
-      entity_id_(0),
-      ltype_(kNone),
-      num_bytes_inproc_send_buff_(0),
-      num_bytes_inproc_recv_buff_(0),
-      num_bytes_interproc_send_buff_(0),
-      num_bytes_interproc_recv_buff_(0) { }
+    Config()
+        : entity_id_(0), ltype_(kNone), num_bytes_inproc_send_buff_(0),
+          num_bytes_inproc_recv_buff_(0), num_bytes_interproc_send_buff_(0),
+          num_bytes_interproc_recv_buff_(0) {}
 
-    Config(int32_t entity_id, int ltype, std::string network_addr):
-      entity_id_(entity_id),
-      ltype_(ltype),
-      network_addr_(network_addr),
-      num_bytes_inproc_send_buff_(0),
-      num_bytes_inproc_recv_buff_(0),
-      num_bytes_interproc_send_buff_(0),
-      num_bytes_interproc_recv_buff_(0) { }
+    Config(int32_t entity_id, int ltype, std::string network_addr)
+        : entity_id_(entity_id), ltype_(ltype), network_addr_(network_addr),
+          num_bytes_inproc_send_buff_(0), num_bytes_inproc_recv_buff_(0),
+          num_bytes_interproc_send_buff_(0), num_bytes_interproc_recv_buff_(0) {
+    }
   };
 
   struct ThreadCommInfo : boost::noncopyable {
@@ -73,8 +67,8 @@ public:
     int32_t entity_id_;
     boost::scoped_ptr<zmq::socket_t> inproc_sock_;
     boost::scoped_ptr<zmq::socket_t> interproc_sock_;
-    boost::scoped_array<zmq::pollitem_t> pollitems_;  // Only contains those
-                                                      // listening sockets
+    boost::scoped_array<zmq::pollitem_t> pollitems_; // Only contains those
+                                                     // listening sockets
     boost::scoped_ptr<zmq::pollitem_t> inproc_pollitem_;
     boost::scoped_ptr<zmq::pollitem_t> interproc_pollitem_;
     int ltype_;
@@ -85,12 +79,13 @@ public:
     int num_bytes_interproc_send_buff_;
     int num_bytes_interproc_recv_buff_;
 
-    ThreadCommInfo() { }
+    ThreadCommInfo() {}
   };
 
   bool IsLocalEntity(int32_t entity_id);
 
-  CommBus(int32_t e_st, int32_t e_end, int32_t num_clients, int32_t num_zmq_thrs = 1);
+  CommBus(int32_t e_st, int32_t e_end, int32_t num_clients,
+          int32_t num_zmq_thrs = 1);
   ~CommBus();
 
   // Register a thread, set up necessary commnication channel.
@@ -111,8 +106,8 @@ public:
   // for more info.
   void ConnectTo(int32_t entity_id, void *connect_msg, size_t size);
   // Connect to a remote thread.
-  void ConnectTo(int32_t entity_id, const std::string& network_addr, void
-      *connect_msg, size_t size);
+  void ConnectTo(int32_t entity_id, const std::string &network_addr,
+                 void *connect_msg, size_t size);
 
   size_t Send(int32_t entity_id, const void *data, size_t len);
   size_t SendInProc(int32_t entity_id, const void *data, size_t len);
@@ -129,26 +124,26 @@ public:
   void RecvInProc(int32_t *entity_id, zmq::message_t *msg);
   bool RecvInProcAsync(int32_t *entity_id, zmq::message_t *msg);
   bool RecvInProcTimeOut(int32_t *entity_id, zmq::message_t *msg,
-      long timeout_milli);
+                         long timeout_milli);
 
   void RecvInterProc(int32_t *entity_id, zmq::message_t *msg);
   bool RecvInterProcAsync(int32_t *entity_id, zmq::message_t *msg);
   bool RecvInterProcTimeOut(int32_t *entity_id, zmq::message_t *msg,
-      long timeout_milli);
+                            long timeout_milli);
   typedef void (CommBus::*RecvFunc)(int32_t *sender_id,
-    zmq::message_t *zmq_msg);
+                                    zmq::message_t *zmq_msg);
   typedef bool (CommBus::*RecvTimeOutFunc)(int32_t *sender_id,
-    zmq::message_t *zmq_msg, long timeout_milli);
+                                           zmq::message_t *zmq_msg,
+                                           long timeout_milli);
   typedef bool (CommBus::*RecvAsyncFunc)(int32_t *sender_id,
                                          zmq::message_t *msg);
 
   typedef void (*WaitMsgFunc)(int32_t *sender_id, zmq::message_t *msg);
-  typedef bool (*WaitMsgTimeOutFunc)(int32_t *sender_id,
-                                         zmq::message_t *msg,
-                                         long timeout_milli);
+  typedef bool (*WaitMsgTimeOutFunc)(int32_t *sender_id, zmq::message_t *msg,
+                                     long timeout_milli);
 
   typedef size_t (CommBus::*SendFunc)(int32_t entity_id, const void *msg,
-    size_t len);
+                                      size_t len);
 
   SendFunc SendAny_;
   RecvFunc RecvAny_;
@@ -158,10 +153,11 @@ public:
 private:
   static void MakeInProcAddr(int32_t entity_id, std::string *result);
   static void MakeInterProcAddr(const std::string &network_addr,
-      std::string *result);
+                                std::string *result);
 
   static void SetUpRouterSocket(zmq::socket_t *sock, int32_t id,
-    int num_bytes_send_buff, int num_bytes_recv_buff);
+                                int num_bytes_send_buff,
+                                int num_bytes_recv_buff);
   static const std::string kInProcPrefix;
   static const std::string kInterProcPrefix;
   zmq::context_t *zmq_ctx_;
@@ -170,4 +166,4 @@ private:
   int32_t e_end_;
   boost::thread_specific_ptr<ThreadCommInfo> thr_info_;
 };
-}   // namespace petuum
+} // namespace petuum

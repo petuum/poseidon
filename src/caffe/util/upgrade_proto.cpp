@@ -12,7 +12,7 @@
 
 namespace caffe {
 
-bool NetNeedsUpgrade(const NetParameter& net_param) {
+bool NetNeedsUpgrade(const NetParameter &net_param) {
   for (int i = 0; i < net_param.layers_size(); ++i) {
     if (net_param.layers(i).has_layer()) {
       return true;
@@ -21,8 +21,8 @@ bool NetNeedsUpgrade(const NetParameter& net_param) {
   return false;
 }
 
-bool UpgradeV0Net(const NetParameter& v0_net_param_padding_layers,
-                  NetParameter* net_param) {
+bool UpgradeV0Net(const NetParameter &v0_net_param_padding_layers,
+                  NetParameter *net_param) {
   // First upgrade padding layers to padded conv layers.
   NetParameter v0_net_param;
   UpgradeV0PaddingLayers(v0_net_param_padding_layers, &v0_net_param);
@@ -33,8 +33,8 @@ bool UpgradeV0Net(const NetParameter& v0_net_param_padding_layers,
     net_param->set_name(v0_net_param.name());
   }
   for (int i = 0; i < v0_net_param.layers_size(); ++i) {
-    is_fully_compatible &= UpgradeLayerParameter(v0_net_param.layers(i),
-                                                 net_param->add_layers());
+    is_fully_compatible &=
+        UpgradeLayerParameter(v0_net_param.layers(i), net_param->add_layers());
   }
   for (int i = 0; i < v0_net_param.input_size(); ++i) {
     net_param->add_input(v0_net_param.input(i));
@@ -48,8 +48,8 @@ bool UpgradeV0Net(const NetParameter& v0_net_param_padding_layers,
   return is_fully_compatible;
 }
 
-void UpgradeV0PaddingLayers(const NetParameter& param,
-                            NetParameter* param_upgraded_pad) {
+void UpgradeV0PaddingLayers(const NetParameter &param,
+                            NetParameter *param_upgraded_pad) {
   // Copy everything other than the layers from the original param.
   param_upgraded_pad->Clear();
   param_upgraded_pad->CopyFrom(param);
@@ -57,18 +57,18 @@ void UpgradeV0PaddingLayers(const NetParameter& param,
   // Figure out which layer each bottom blob comes from.
   map<string, int> blob_name_to_last_top_idx;
   for (int i = 0; i < param.input_size(); ++i) {
-    const string& blob_name = param.input(i);
+    const string &blob_name = param.input(i);
     blob_name_to_last_top_idx[blob_name] = -1;
   }
   for (int i = 0; i < param.layers_size(); ++i) {
-    const LayerParameter& layer_connection = param.layers(i);
-    const V0LayerParameter& layer_param = layer_connection.layer();
+    const LayerParameter &layer_connection = param.layers(i);
+    const V0LayerParameter &layer_param = layer_connection.layer();
     // Add the layer to the new net, unless it's a padding layer.
     if (layer_param.type() != "padding") {
       param_upgraded_pad->add_layers()->CopyFrom(layer_connection);
     }
     for (int j = 0; j < layer_connection.bottom_size(); ++j) {
-      const string& blob_name = layer_connection.bottom(j);
+      const string &blob_name = layer_connection.bottom(j);
       if (blob_name_to_last_top_idx.find(blob_name) ==
           blob_name_to_last_top_idx.end()) {
         LOG(FATAL) << "Unknown blob input " << blob_name << " to layer " << j;
@@ -85,7 +85,7 @@ void UpgradeV0PaddingLayers(const NetParameter& param,
         // cases have undefined behavior in Caffe.
         CHECK((layer_param.type() == "conv") || (layer_param.type() == "pool"))
             << "Padding layer input to "
-            "non-convolutional / non-pooling layer type "
+               "non-convolutional / non-pooling layer type "
             << layer_param.type();
         CHECK_EQ(layer_connection.bottom_size(), 1)
             << "Conv Layer takes a single blob as input.";
@@ -94,21 +94,22 @@ void UpgradeV0PaddingLayers(const NetParameter& param,
         CHECK_EQ(source_layer.top_size(), 1)
             << "Padding Layer produces a single blob as output.";
         int layer_index = param_upgraded_pad->layers_size() - 1;
-        param_upgraded_pad->mutable_layers(layer_index)->mutable_layer()
+        param_upgraded_pad->mutable_layers(layer_index)
+            ->mutable_layer()
             ->set_pad(source_layer.layer().pad());
         param_upgraded_pad->mutable_layers(layer_index)
             ->set_bottom(j, source_layer.bottom(0));
       }
     }
     for (int j = 0; j < layer_connection.top_size(); ++j) {
-      const string& blob_name = layer_connection.top(j);
+      const string &blob_name = layer_connection.top(j);
       blob_name_to_last_top_idx[blob_name] = i;
     }
   }
 }
 
-bool UpgradeLayerParameter(const LayerParameter& v0_layer_connection,
-                           LayerParameter* layer_param) {
+bool UpgradeLayerParameter(const LayerParameter &v0_layer_connection,
+                           LayerParameter *layer_param) {
   bool is_fully_compatible = true;
   layer_param->Clear();
   for (int i = 0; i < v0_layer_connection.bottom_size(); ++i) {
@@ -118,11 +119,11 @@ bool UpgradeLayerParameter(const LayerParameter& v0_layer_connection,
     layer_param->add_top(v0_layer_connection.top(i));
   }
   if (v0_layer_connection.has_layer()) {
-    const V0LayerParameter& v0_layer_param = v0_layer_connection.layer();
+    const V0LayerParameter &v0_layer_param = v0_layer_connection.layer();
     if (v0_layer_param.has_name()) {
       layer_param->set_name(v0_layer_param.name());
     }
-    const string& type = v0_layer_param.type();
+    const string &type = v0_layer_param.type();
     if (v0_layer_param.has_type()) {
       layer_param->set_type(UpgradeV0LayerType(type));
     }
@@ -161,11 +162,13 @@ bool UpgradeLayerParameter(const LayerParameter& v0_layer_connection,
     }
     if (v0_layer_param.has_weight_filler()) {
       if (type == "conv") {
-        layer_param->mutable_convolution_param()->
-            mutable_weight_filler()->CopyFrom(v0_layer_param.weight_filler());
+        layer_param->mutable_convolution_param()
+            ->mutable_weight_filler()
+            ->CopyFrom(v0_layer_param.weight_filler());
       } else if (type == "innerproduct") {
-        layer_param->mutable_inner_product_param()->
-            mutable_weight_filler()->CopyFrom(v0_layer_param.weight_filler());
+        layer_param->mutable_inner_product_param()
+            ->mutable_weight_filler()
+            ->CopyFrom(v0_layer_param.weight_filler());
       } else {
         LOG(ERROR) << "Unknown parameter weight_filler for layer type " << type;
         is_fully_compatible = false;
@@ -173,11 +176,13 @@ bool UpgradeLayerParameter(const LayerParameter& v0_layer_connection,
     }
     if (v0_layer_param.has_bias_filler()) {
       if (type == "conv") {
-        layer_param->mutable_convolution_param()->
-            mutable_bias_filler()->CopyFrom(v0_layer_param.bias_filler());
+        layer_param->mutable_convolution_param()
+            ->mutable_bias_filler()
+            ->CopyFrom(v0_layer_param.bias_filler());
       } else if (type == "innerproduct") {
-        layer_param->mutable_inner_product_param()->
-            mutable_bias_filler()->CopyFrom(v0_layer_param.bias_filler());
+        layer_param->mutable_inner_product_param()
+            ->mutable_bias_filler()
+            ->CopyFrom(v0_layer_param.bias_filler());
       } else {
         LOG(ERROR) << "Unknown parameter bias_filler for layer type " << type;
         is_fully_compatible = false;
@@ -306,12 +311,11 @@ bool UpgradeLayerParameter(const LayerParameter& v0_layer_connection,
       }
     }
     if (v0_layer_param.has_scale()) {
-      layer_param->mutable_transform_param()->
-          set_scale(v0_layer_param.scale());
+      layer_param->mutable_transform_param()->set_scale(v0_layer_param.scale());
     }
     if (v0_layer_param.has_meanfile()) {
-      layer_param->mutable_transform_param()->
-          set_mean_file(v0_layer_param.meanfile());
+      layer_param->mutable_transform_param()->set_mean_file(
+          v0_layer_param.meanfile());
     }
     if (v0_layer_param.has_batchsize()) {
       if (type == "data") {
@@ -332,12 +336,12 @@ bool UpgradeLayerParameter(const LayerParameter& v0_layer_connection,
       }
     }
     if (v0_layer_param.has_cropsize()) {
-      layer_param->mutable_transform_param()->
-          set_crop_size(v0_layer_param.cropsize());
+      layer_param->mutable_transform_param()->set_crop_size(
+          v0_layer_param.cropsize());
     }
     if (v0_layer_param.has_mirror()) {
-      layer_param->mutable_transform_param()->
-          set_mirror(v0_layer_param.mirror());
+      layer_param->mutable_transform_param()->set_mirror(
+          v0_layer_param.mirror());
     }
     if (v0_layer_param.has_rand_skip()) {
       if (type == "data") {
@@ -432,8 +436,7 @@ bool UpgradeLayerParameter(const LayerParameter& v0_layer_connection,
         layer_param->mutable_window_data_param()->set_crop_mode(
             v0_layer_param.det_crop_mode());
       } else {
-        LOG(ERROR) << "Unknown parameter det_crop_mode for layer type "
-                   << type;
+        LOG(ERROR) << "Unknown parameter det_crop_mode for layer type " << type;
         is_fully_compatible = false;
       }
     }
@@ -451,7 +454,7 @@ bool UpgradeLayerParameter(const LayerParameter& v0_layer_connection,
   return is_fully_compatible;
 }
 
-LayerParameter_LayerType UpgradeV0LayerType(const string& type) {
+LayerParameter_LayerType UpgradeV0LayerType(const string &type) {
   if (type == "accuracy") {
     return LayerParameter_LayerType_ACCURACY;
   } else if (type == "bnll") {
@@ -506,60 +509,84 @@ LayerParameter_LayerType UpgradeV0LayerType(const string& type) {
   }
 }
 
-bool NetNeedsDataUpgrade(const NetParameter& net_param) {
+bool NetNeedsDataUpgrade(const NetParameter &net_param) {
   for (int i = 0; i < net_param.layers_size(); ++i) {
     if (net_param.layers(i).type() == LayerParameter_LayerType_DATA) {
       DataParameter layer_param = net_param.layers(i).data_param();
-      if (layer_param.has_scale()) { return true; }
-      if (layer_param.has_mean_file()) { return true; }
-      if (layer_param.has_crop_size()) { return true; }
-      if (layer_param.has_mirror()) { return true; }
+      if (layer_param.has_scale()) {
+        return true;
+      }
+      if (layer_param.has_mean_file()) {
+        return true;
+      }
+      if (layer_param.has_crop_size()) {
+        return true;
+      }
+      if (layer_param.has_mirror()) {
+        return true;
+      }
     }
     if (net_param.layers(i).type() == LayerParameter_LayerType_IMAGE_DATA) {
       ImageDataParameter layer_param = net_param.layers(i).image_data_param();
-      if (layer_param.has_scale()) { return true; }
-      if (layer_param.has_mean_file()) { return true; }
-      if (layer_param.has_crop_size()) { return true; }
-      if (layer_param.has_mirror()) { return true; }
+      if (layer_param.has_scale()) {
+        return true;
+      }
+      if (layer_param.has_mean_file()) {
+        return true;
+      }
+      if (layer_param.has_crop_size()) {
+        return true;
+      }
+      if (layer_param.has_mirror()) {
+        return true;
+      }
     }
     if (net_param.layers(i).type() == LayerParameter_LayerType_WINDOW_DATA) {
       WindowDataParameter layer_param = net_param.layers(i).window_data_param();
-      if (layer_param.has_scale()) { return true; }
-      if (layer_param.has_mean_file()) { return true; }
-      if (layer_param.has_crop_size()) { return true; }
-      if (layer_param.has_mirror()) { return true; }
+      if (layer_param.has_scale()) {
+        return true;
+      }
+      if (layer_param.has_mean_file()) {
+        return true;
+      }
+      if (layer_param.has_crop_size()) {
+        return true;
+      }
+      if (layer_param.has_mirror()) {
+        return true;
+      }
     }
   }
   return false;
 }
 
-#define CONVERT_LAYER_TRANSFORM_PARAM(TYPE, Name, param_name) \
-  do { \
-    if (net_param->layers(i).type() == LayerParameter_LayerType_##TYPE) { \
-      Name##Parameter* layer_param = \
-          net_param->mutable_layers(i)->mutable_##param_name##_param(); \
-      TransformationParameter* transform_param = \
-          net_param->mutable_layers(i)->mutable_transform_param(); \
-      if (layer_param->has_scale()) { \
-        transform_param->set_scale(layer_param->scale()); \
-        layer_param->clear_scale(); \
-      } \
-      if (layer_param->has_mean_file()) { \
-        transform_param->set_mean_file(layer_param->mean_file()); \
-        layer_param->clear_mean_file(); \
-      } \
-      if (layer_param->has_crop_size()) { \
-        transform_param->set_crop_size(layer_param->crop_size()); \
-        layer_param->clear_crop_size(); \
-      } \
-      if (layer_param->has_mirror()) { \
-        transform_param->set_mirror(layer_param->mirror()); \
-        layer_param->clear_mirror(); \
-      } \
-    } \
+#define CONVERT_LAYER_TRANSFORM_PARAM(TYPE, Name, param_name)                  \
+  do {                                                                         \
+    if (net_param->layers(i).type() == LayerParameter_LayerType_##TYPE) {      \
+      Name##Parameter *layer_param =                                           \
+          net_param->mutable_layers(i)->mutable_##param_name##_param();        \
+      TransformationParameter *transform_param =                               \
+          net_param->mutable_layers(i)->mutable_transform_param();             \
+      if (layer_param->has_scale()) {                                          \
+        transform_param->set_scale(layer_param->scale());                      \
+        layer_param->clear_scale();                                            \
+      }                                                                        \
+      if (layer_param->has_mean_file()) {                                      \
+        transform_param->set_mean_file(layer_param->mean_file());              \
+        layer_param->clear_mean_file();                                        \
+      }                                                                        \
+      if (layer_param->has_crop_size()) {                                      \
+        transform_param->set_crop_size(layer_param->crop_size());              \
+        layer_param->clear_crop_size();                                        \
+      }                                                                        \
+      if (layer_param->has_mirror()) {                                         \
+        transform_param->set_mirror(layer_param->mirror());                    \
+        layer_param->clear_mirror();                                           \
+      }                                                                        \
+    }                                                                          \
   } while (0)
 
-void UpgradeNetDataTransformation(NetParameter* net_param) {
+void UpgradeNetDataTransformation(NetParameter *net_param) {
   for (int i = 0; i < net_param->layers_size(); ++i) {
     CONVERT_LAYER_TRANSFORM_PARAM(DATA, Data, data);
     CONVERT_LAYER_TRANSFORM_PARAM(IMAGE_DATA, ImageData, image_data);
@@ -567,8 +594,8 @@ void UpgradeNetDataTransformation(NetParameter* net_param) {
   }
 }
 
-void NetParameterToPrettyPrint(const NetParameter& param,
-                               NetParameterPrettyPrint* pretty_param) {
+void NetParameterToPrettyPrint(const NetParameter &param,
+                               NetParameterPrettyPrint *pretty_param) {
   pretty_param->Clear();
   if (param.has_name()) {
     pretty_param->set_name(param.name());
@@ -587,7 +614,7 @@ void NetParameterToPrettyPrint(const NetParameter& param,
   }
 }
 
-void UpgradeNetAsNeeded(const string& param_file, NetParameter* param) {
+void UpgradeNetAsNeeded(const string &param_file, NetParameter *param) {
   if (NetNeedsUpgrade(*param)) {
     // NetParameter was specified using the old style (V0LayerParameter); try to
     // upgrade it.
@@ -595,13 +622,15 @@ void UpgradeNetAsNeeded(const string& param_file, NetParameter* param) {
                << "V0LayerParameter: " << param_file;
     NetParameter original_param(*param);
     if (!UpgradeV0Net(original_param, param)) {
-      LOG(ERROR) << "Warning: had one or more problems upgrading "
+      LOG(ERROR)
+          << "Warning: had one or more problems upgrading "
           << "V0NetParameter to NetParameter (see above); continuing anyway.";
     } else {
       LOG(INFO) << "Successfully upgraded file specified using deprecated "
                 << "V0LayerParameter";
     }
-    LOG(ERROR) << "Note that future Caffe releases will not support "
+    LOG(ERROR)
+        << "Note that future Caffe releases will not support "
         << "V0NetParameter; use ./build/tools/upgrade_net_proto_text for "
         << "prototxt and ./build/tools/upgrade_net_proto_binary for model "
         << "weights upgrade this and any other net protos to the new format.";
@@ -618,18 +647,18 @@ void UpgradeNetAsNeeded(const string& param_file, NetParameter* param) {
   }
 }
 
-void ReadNetParamsFromTextFileOrDie(const string& param_file,
-                                    NetParameter* param) {
+void ReadNetParamsFromTextFileOrDie(const string &param_file,
+                                    NetParameter *param) {
   CHECK(ReadProtoFromTextFile(param_file, param))
       << "Failed to parse NetParameter file: " << param_file;
   UpgradeNetAsNeeded(param_file, param);
 }
 
-void ReadNetParamsFromBinaryFileOrDie(const string& param_file,
-                                      NetParameter* param) {
+void ReadNetParamsFromBinaryFileOrDie(const string &param_file,
+                                      NetParameter *param) {
   CHECK(ReadProtoFromBinaryFile(param_file, param))
       << "Failed to parse NetParameter file: " << param_file;
   UpgradeNetAsNeeded(param_file, param);
 }
 
-}  // namespace caffe
+} // namespace caffe

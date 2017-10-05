@@ -5,7 +5,7 @@ script_path=`readlink -f $0`
 script_dir=`dirname $script_path`
 caffe_dir=`dirname $script_dir`
 caffe_third_party=${caffe_dir}/third_party
-rm -rf ${caffe_third_party}
+#rm -rf ${caffe_third_party}
 mkdir -p ${caffe_third_party}
 
 sudo apt-get update

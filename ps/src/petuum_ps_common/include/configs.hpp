@@ -39,53 +39,25 @@ struct RowOpLogType {
   static const int32_t kDenseRowOpLogFloat16 = 3;
 };
 
-enum OpLogType {
-  Sparse = 0,
-  AppendOnly = 1,
-  Dense = 2
-};
+enum OpLogType { Sparse = 0, AppendOnly = 1, Dense = 2 };
 
-enum AppendOnlyOpLogType {
-  Inc = 0,
-  BatchInc = 1,
-  DenseBatchInc = 2
-};
+enum AppendOnlyOpLogType { Inc = 0, BatchInc = 1, DenseBatchInc = 2 };
 
-enum ProcessStorageType {
-  BoundedDense = 0,
-  BoundedSparse = 1
-};
+enum ProcessStorageType { BoundedDense = 0, BoundedSparse = 1 };
 
-enum NumaPolicy {
-  Even = 0,
-  Center = 1
-};
+enum NumaPolicy { Even = 0, Center = 1 };
 
 struct TableGroupConfig {
 
-  TableGroupConfig():
-      stats_path(""),
-      num_comm_channels_per_client(1),
-      num_tables(1),
-      num_total_clients(1),
-      num_local_app_threads(2),
-      aggressive_clock(false),
-      aggressive_cpu(false),
-      snapshot_clock(-1),
-      resume_clock(-1),
-      update_sort_policy(Random),
-      bg_idle_milli(2),
-      client_bandwidth_mbps(40),
-      server_bandwidth_mbps(40),
-      thread_oplog_batch_size(100*1000*1000),
-      row_candidate_factor(5),
-      numa_opt(false),
-      numa_index(0),
-      numa_policy(Even),
-      naive_table_oplog_meta(true),
-      suppression_on(false),
-      use_approx_sort(false),
-    num_zmq_threads(1) { }
+  TableGroupConfig()
+      : stats_path(""), num_comm_channels_per_client(1), num_tables(1),
+        num_total_clients(1), num_local_app_threads(2), aggressive_clock(false),
+        aggressive_cpu(false), snapshot_clock(-1), resume_clock(-1),
+        update_sort_policy(Random), bg_idle_milli(2), client_bandwidth_mbps(40),
+        server_bandwidth_mbps(40), thread_oplog_batch_size(100 * 1000 * 1000),
+        row_candidate_factor(5), numa_opt(false), numa_index(0),
+        numa_policy(Even), naive_table_oplog_meta(true), suppression_on(false),
+        use_approx_sort(false), num_zmq_threads(1) {}
 
   std::string stats_path;
 
@@ -228,4 +200,4 @@ struct ClientTableConfig {
   size_t client_send_oplog_upper_bound;
 };
 
-}  // namespace petuum
+} // namespace petuum

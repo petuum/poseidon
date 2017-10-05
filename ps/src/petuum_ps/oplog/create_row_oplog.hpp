@@ -12,50 +12,52 @@
 namespace petuum {
 
 class CreateRowOpLog {
- public:
-  typedef AbstractRowOpLog *(*CreateRowOpLogFunc)(
-      size_t update_size, const AbstractRow *sample_row,
-      size_t row_oplog_capacity);
+public:
+  typedef AbstractRowOpLog *(*CreateRowOpLogFunc)(size_t update_size,
+                                                  const AbstractRow *sample_row,
+                                                  size_t row_oplog_capacity);
 
-  static AbstractRowOpLog *CreateDenseRowOpLog(
-      size_t update_size, const AbstractRow *sample_row,
-      size_t row_oplog_capacity);
+  static AbstractRowOpLog *CreateDenseRowOpLog(size_t update_size,
+                                               const AbstractRow *sample_row,
+                                               size_t row_oplog_capacity);
 
-  static AbstractRowOpLog *CreateVersionDenseRowOpLog(
-      size_t update_size, const AbstractRow *sample_row,
-      size_t row_oplog_capacity);
+  static AbstractRowOpLog *
+  CreateVersionDenseRowOpLog(size_t update_size, const AbstractRow *sample_row,
+                             size_t row_oplog_capacity);
 
-  static AbstractRowOpLog *CreateSparseRowOpLog(
-      size_t update_size, const AbstractRow *sample_row,
-      size_t row_oplog_capacity);
+  static AbstractRowOpLog *CreateSparseRowOpLog(size_t update_size,
+                                                const AbstractRow *sample_row,
+                                                size_t row_oplog_capacity);
 
-  static AbstractRowOpLog *CreateSparseVectorRowOpLog(
-      size_t update_size, const AbstractRow *sample_row,
-      size_t row_oplog_capacity);
+  static AbstractRowOpLog *
+  CreateSparseVectorRowOpLog(size_t update_size, const AbstractRow *sample_row,
+                             size_t row_oplog_capacity);
 
-  static AbstractRowOpLog *CreateDenseRowOpLogFloat16(
-      size_t update_size, const AbstractRow *sample_row,
-      size_t row_oplog_capacity);
+  static AbstractRowOpLog *
+  CreateDenseRowOpLogFloat16(size_t update_size, const AbstractRow *sample_row,
+                             size_t row_oplog_capacity);
 
-  static AbstractRowOpLog *CreateDenseMetaRowOpLog(
-      size_t update_size, const AbstractRow *sample_row,
-      size_t row_oplog_capacity);
+  static AbstractRowOpLog *
+  CreateDenseMetaRowOpLog(size_t update_size, const AbstractRow *sample_row,
+                          size_t row_oplog_capacity);
 
-  static AbstractRowOpLog *CreateVersionDenseMetaRowOpLog(
-      size_t update_size, const AbstractRow *sample_row,
-      size_t row_oplog_capacity);
+  static AbstractRowOpLog *
+  CreateVersionDenseMetaRowOpLog(size_t update_size,
+                                 const AbstractRow *sample_row,
+                                 size_t row_oplog_capacity);
 
-  static AbstractRowOpLog *CreateSparseMetaRowOpLog(
-      size_t update_size, const AbstractRow *sample_row,
-      size_t row_oplog_capacity);
+  static AbstractRowOpLog *
+  CreateSparseMetaRowOpLog(size_t update_size, const AbstractRow *sample_row,
+                           size_t row_oplog_capacity);
 
-  static AbstractRowOpLog *CreateSparseVectorMetaRowOpLog(
-      size_t update_size, const AbstractRow *sample_row,
-      size_t row_oplog_capacity);
+  static AbstractRowOpLog *
+  CreateSparseVectorMetaRowOpLog(size_t update_size,
+                                 const AbstractRow *sample_row,
+                                 size_t row_oplog_capacity);
 
-  static AbstractRowOpLog *CreateDenseMetaRowOpLogFloat16(
-      size_t update_size, const AbstractRow *sample_row,
-      size_t row_oplog_capacity);
-
+  static AbstractRowOpLog *
+  CreateDenseMetaRowOpLogFloat16(size_t update_size,
+                                 const AbstractRow *sample_row,
+                                 size_t row_oplog_capacity);
 };
 }

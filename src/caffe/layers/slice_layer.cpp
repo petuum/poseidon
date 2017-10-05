@@ -8,22 +8,22 @@
 namespace caffe {
 
 template <typename Dtype>
-void SliceLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-    vector<Blob<Dtype>*>* top, const bool init_ps, int* num_tables,
-    map<string, vector<int> >* layer_name_to_blob_global_idx) {
-  const SliceParameter& slice_param = this->layer_param_.slice_param();
+void SliceLayer<Dtype>::LayerSetUp(
+    const vector<Blob<Dtype> *> &bottom, vector<Blob<Dtype> *> *top,
+    const bool init_ps, int *num_tables,
+    map<string, vector<int>> *layer_name_to_blob_global_idx) {
+  const SliceParameter &slice_param = this->layer_param_.slice_param();
   slice_dim_ = slice_param.slice_dim();
   CHECK_GE(slice_dim_, 0);
   CHECK_LE(slice_dim_, 1) << "Can only slice num and channels";
   slice_point_.clear();
-  std::copy(slice_param.slice_point().begin(),
-      slice_param.slice_point().end(),
-      std::back_inserter(slice_point_));
+  std::copy(slice_param.slice_point().begin(), slice_param.slice_point().end(),
+            std::back_inserter(slice_point_));
 }
 
 template <typename Dtype>
-void SliceLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top) {
+void SliceLayer<Dtype>::Reshape(const vector<Blob<Dtype> *> &bottom,
+                                vector<Blob<Dtype> *> *top) {
   count_ = 0;
   num_ = bottom[0]->num();
   channels_ = bottom[0]->channels();
@@ -47,13 +47,13 @@ void SliceLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
       slices.push_back(num_ - prev);
       for (int i = 0; i < top->size(); ++i) {
         (*top)[i]->Reshape(slices[i], channels_, height_, width_);
-         count_ += (*top)[i]->count();
+        count_ += (*top)[i]->count();
       }
     } else {
       slices.push_back(channels_ - prev);
       for (int i = 0; i < top->size(); ++i) {
         (*top)[i]->Reshape(num_, slices[i], height_, width_);
-         count_ += (*top)[i]->count();
+        count_ += (*top)[i]->count();
       }
     }
   } else {
@@ -77,14 +77,14 @@ void SliceLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-void SliceLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top) {
-  const Dtype* bottom_data = bottom[0]->mutable_cpu_data();
+void SliceLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype> *> &bottom,
+                                    vector<Blob<Dtype> *> *top) {
+  const Dtype *bottom_data = bottom[0]->mutable_cpu_data();
   if (slice_dim_ == 0) {
     int offset_num = 0;
     for (int i = 0; i < top->size(); ++i) {
-      Blob<Dtype>* blob = (*top)[i];
-      Dtype* top_data = blob->mutable_cpu_data();
+      Blob<Dtype> *blob = (*top)[i];
+      Dtype *top_data = blob->mutable_cpu_data();
       caffe_copy(blob->count(), bottom_data + bottom[0]->offset(offset_num),
                  top_data);
       offset_num += blob->num();
@@ -92,8 +92,8 @@ void SliceLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   } else if (slice_dim_ == 1) {
     int offset_channel = 0;
     for (int i = 0; i < top->size(); ++i) {
-      Blob<Dtype>* blob = (*top)[i];
-      Dtype* top_data = blob->mutable_cpu_data();
+      Blob<Dtype> *blob = (*top)[i];
+      Dtype *top_data = blob->mutable_cpu_data();
       const int num_elem = blob->channels() * blob->height() * blob->width();
       for (int n = 0; n < num_; ++n) {
         caffe_copy(num_elem, bottom_data + bottom[0]->offset(n, offset_channel),
@@ -101,19 +101,22 @@ void SliceLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       }
       offset_channel += blob->channels();
     }
-  }  // slice_dim_ is guaranteed to be 0 or 1 by SetUp.
+  } // slice_dim_ is guaranteed to be 0 or 1 by SetUp.
 }
 
 template <typename Dtype>
-void SliceLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom) {
-  if (!propagate_down[0]) { return; }
-  Dtype* bottom_diff = (*bottom)[0]->mutable_cpu_diff();
+void SliceLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype> *> &top,
+                                     const vector<bool> &propagate_down,
+                                     vector<Blob<Dtype> *> *bottom) {
+  if (!propagate_down[0]) {
+    return;
+  }
+  Dtype *bottom_diff = (*bottom)[0]->mutable_cpu_diff();
   if (slice_dim_ == 0) {
     int offset_num = 0;
     for (int i = 0; i < top.size(); ++i) {
-      Blob<Dtype>* blob = top[i];
-      const Dtype* top_diff = blob->cpu_diff();
+      Blob<Dtype> *blob = top[i];
+      const Dtype *top_diff = blob->cpu_diff();
       caffe_copy(blob->count(), top_diff,
                  bottom_diff + (*bottom)[0]->offset(offset_num));
       offset_num += blob->num();
@@ -121,8 +124,8 @@ void SliceLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   } else if (slice_dim_ == 1) {
     int offset_channel = 0;
     for (int i = 0; i < top.size(); ++i) {
-      Blob<Dtype>* blob = top[i];
-      const Dtype* top_diff = blob->cpu_diff();
+      Blob<Dtype> *blob = top[i];
+      const Dtype *top_diff = blob->cpu_diff();
       const int num_elem = blob->channels() * blob->height() * blob->width();
       for (int n = 0; n < num_; ++n) {
         caffe_copy(num_elem, top_diff + blob->offset(n),
@@ -130,7 +133,7 @@ void SliceLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
       }
       offset_channel += blob->channels();
     }
-  }  // slice_dim_ is guaranteed to be 0 or 1 by SetUp.
+  } // slice_dim_ is guaranteed to be 0 or 1 by SetUp.
 }
 
 #ifdef CPU_ONLY
@@ -139,4 +142,4 @@ STUB_GPU(SliceLayer);
 
 INSTANTIATE_CLASS(SliceLayer);
 
-}  // namespace caffe
+} // namespace caffe

@@ -26,9 +26,7 @@ message BlobProto {
 
 // The BlobProtoVector is simply a way to pass multiple blobproto instances
 // around.
-message BlobProtoVector {
-  repeated BlobProto blobs = 1;
-}
+message BlobProtoVector { repeated BlobProto blobs = 1; }
 
 message Datum {
   optional int32 channels = 1;
@@ -45,17 +43,17 @@ message FillerParameter {
   // The filler type.
   optional string type = 1 [default = 'constant'];
   optional float value = 2 [default = 0]; // the value in constant filler
-  optional float min = 3 [default = 0]; // the min value in uniform filler
-  optional float max = 4 [default = 1]; // the max value in uniform filler
-  optional float mean = 5 [default = 0]; // the mean value in Gaussian filler
-  optional float std = 6 [default = 1]; // the std value in Gaussian filler
+  optional float min = 3 [default = 0];   // the min value in uniform filler
+  optional float max = 4 [default = 1];   // the max value in uniform filler
+  optional float mean = 5 [default = 0];  // the mean value in Gaussian filler
+  optional float std = 6 [default = 1];   // the std value in Gaussian filler
   // The expected number of non-zero input weights for a given output in
   // Gaussian filler -- the default -1 means don't perform sparsification.
   optional int32 sparse = 7 [default = -1];
 }
 
 message NetParameter {
-  optional string name = 1; // consider giving the network a name
+  optional string name = 1;           // consider giving the network a name
   repeated LayerParameter layers = 2; // a bunch of layers.
   // The input blobs to the network.
   repeated string input = 3;
@@ -99,9 +97,9 @@ message SolverParameter {
   optional NetParameter net_param = 25;
 
   optional string train_net = 1; // Proto filename for the train net.
-  repeated string test_net = 2; // Proto filenames for the test nets.
+  repeated string test_net = 2;  // Proto filenames for the test nets.
   optional NetParameter train_net_param = 21; // Inline train net params.
-  repeated NetParameter test_net_param = 22; // Inline test net params.
+  repeated NetParameter test_net_param = 22;  // Inline test net params.
 
   // The states for the train/test nets. Must be unspecified or
   // specified once per net.
@@ -126,18 +124,18 @@ message SolverParameter {
   // the number of iterations between displaying info. If display = 0, no info
   // will be displayed.
   optional int32 display = 6;
-  optional int32 max_iter = 7; // the maximum number of iterations
+  optional int32 max_iter = 7;   // the maximum number of iterations
   optional string lr_policy = 8; // The learning rate decay policy.
-  optional float gamma = 9; // The parameter to compute the learning rate.
-  optional float power = 10; // The parameter to compute the learning rate.
-  optional float momentum = 11; // The momentum value.
+  optional float gamma = 9;      // The parameter to compute the learning rate.
+  optional float power = 10;     // The parameter to compute the learning rate.
+  optional float momentum = 11;  // The momentum value.
   optional float weight_decay = 12; // The weight decay.
   // regularization types supported: L1 and L2
   // controlled by weight_decay
   optional string regularization_type = 29 [default = "L2"];
   optional int32 stepsize = 13; // the stepsize for learning rate policy "step"
   optional int32 snapshot = 14 [default = 0]; // The snapshot interval
-  optional string snapshot_prefix = 15; // The prefix for the snapshot.
+  optional string snapshot_prefix = 15;       // The prefix for the snapshot.
   // whether to snapshot diff in the results or not. Snapshotting diff will help
   // debugging but the final protocol buffer size will be much larger.
   optional bool snapshot_diff = 16 [default = false];
@@ -171,20 +169,20 @@ message SolverParameter {
   // If false, don't save a snapshot after training finishes.
   optional bool snapshot_after_train = 28 [default = true];
 
-  // layer_name => vector of blobs' global indexes 
+  // layer_name => vector of blobs' global indexes
   repeated LayerPSTablePair layer_blobs_global_idx = 33;
 }
 
 // A message that stores the solver snapshots
 message SolverState {
-  optional int32 iter = 1; // The current iteration
+  optional int32 iter = 1;         // The current iteration
   optional string learned_net = 2; // The file that stores the learned net.
-  repeated BlobProto history = 3; // The history for sgd solvers
+  repeated BlobProto history = 3;  // The history for sgd solvers
 }
 
 enum Phase {
-   TRAIN = 0;
-   TEST = 1;
+  TRAIN = 0;
+  TEST = 1;
 }
 
 message NetState {
@@ -222,8 +220,8 @@ message LayerPSTablePair {
 // LayerParameter next available ID: 41 (last added: contrastive_loss_param)
 message LayerParameter {
   repeated string bottom = 2; // the name of the bottom blobs
-  repeated string top = 3; // the name of the top blobs
-  optional string name = 4; // the layer name
+  repeated string top = 3;    // the name of the top blobs
+  optional string name = 4;   // the layer name
 
   // Rules controlling whether and when a layer is included in the network,
   // based on the current NetState.  You may specify a non-zero number of rules
@@ -365,7 +363,8 @@ message TransformationParameter {
   // Specify if we would like to randomly crop an image.
   optional uint32 crop_size = 3 [default = 0];
   optional string mean_file = 4;
-  // if specified can be repeated once (would substract it from all the channels)
+  // if specified can be repeated once (would substract it from all the
+  // channels)
   // or can be repeated the same number of times as channels
   // (would subtract them from the corresponding channel)
   repeated float mean_value = 5;
@@ -396,7 +395,7 @@ message ConcatParameter {
 
 // Message that stores parameters used by ContrastiveLossLayer
 message ContrastiveLossParameter {
-  //margin for dissimilar pair
+  // margin for dissimilar pair
   optional float margin = 1 [default = 1.0];
 }
 
@@ -406,18 +405,18 @@ message ConvolutionParameter {
   optional bool bias_term = 2 [default = true]; // whether to have bias terms
   // Pad, kernel size, and stride are all given as a single value for equal
   // dimensions in height and width or as Y, X pairs.
-  optional uint32 pad = 3 [default = 0]; // The padding size (equal in Y, X)
-  optional uint32 pad_h = 9 [default = 0]; // The padding height
+  optional uint32 pad = 3 [default = 0];    // The padding size (equal in Y, X)
+  optional uint32 pad_h = 9 [default = 0];  // The padding height
   optional uint32 pad_w = 10 [default = 0]; // The padding width
-  optional uint32 kernel_size = 4; // The kernel size (square)
-  optional uint32 kernel_h = 11; // The kernel height
-  optional uint32 kernel_w = 12; // The kernel width
-  optional uint32 group = 5 [default = 1]; // The group size for group conv
+  optional uint32 kernel_size = 4;          // The kernel size (square)
+  optional uint32 kernel_h = 11;            // The kernel height
+  optional uint32 kernel_w = 12;            // The kernel width
+  optional uint32 group = 5 [default = 1];  // The group size for group conv
   optional uint32 stride = 6 [default = 1]; // The stride (equal in Y, X)
-  optional uint32 stride_h = 13; // The stride height
-  optional uint32 stride_w = 14; // The stride width
+  optional uint32 stride_h = 13;            // The stride height
+  optional uint32 stride_w = 14;            // The stride width
   optional FillerParameter weight_filler = 7; // The filler for the weight
-  optional FillerParameter bias_filler = 8; // The filler for the bias
+  optional FillerParameter bias_filler = 8;   // The filler for the bias
   enum Engine {
     DEFAULT = 0;
     CAFFE = 1;
@@ -448,10 +447,12 @@ message DataParameter {
   // mean subtraction is always carried out before scaling.
   optional float scale = 2 [default = 1];
   optional string mean_file = 3;
-  // DEPRECATED. See TransformationParameter. Specify if we would like to randomly
+  // DEPRECATED. See TransformationParameter. Specify if we would like to
+  // randomly
   // crop an image.
   optional uint32 crop_size = 5 [default = 0];
-  // DEPRECATED. See TransformationParameter. Specify if we want to randomly mirror
+  // DEPRECATED. See TransformationParameter. Specify if we want to randomly
+  // mirror
   // data.
   optional bool mirror = 6 [default = false];
 }
@@ -465,7 +466,8 @@ message DropoutParameter {
 // DummyDataLayer fills any number of arbitrarily shaped blobs with random
 // (or constant) data generated by "Fillers" (see "message FillerParameter").
 message DummyDataParameter {
-  // This layer produces N >= 1 top blobs.  DummyDataParameter must specify 1 or N
+  // This layer produces N >= 1 top blobs.  DummyDataParameter must specify 1 or
+  // N
   // num, N channels, N height, and N width fields, and must specify 0, 1 or N
   // data_fillers.
   //
@@ -508,9 +510,7 @@ message HDF5DataParameter {
 }
 
 // Message that stores parameters used by HDF5OutputLayer
-message HDF5OutputParameter {
-  optional string file_name = 1;
-}
+message HDF5OutputParameter { optional string file_name = 1; }
 
 message HingeLossParameter {
   enum Norm {
@@ -543,10 +543,12 @@ message ImageDataParameter {
   // mean subtraction is always carried out before scaling.
   optional float scale = 2 [default = 1];
   optional string mean_file = 3;
-  // DEPRECATED. See TransformationParameter. Specify if we would like to randomly
+  // DEPRECATED. See TransformationParameter. Specify if we would like to
+  // randomly
   // crop an image.
   optional uint32 crop_size = 5 [default = 0];
-  // DEPRECATED. See TransformationParameter. Specify if we want to randomly mirror
+  // DEPRECATED. See TransformationParameter. Specify if we want to randomly
+  // mirror
   // data.
   optional bool mirror = 6 [default = false];
 }
@@ -561,8 +563,8 @@ message InfogainLossParameter {
 message InnerProductParameter {
   optional uint32 num_output = 1; // The number of outputs for the layer
   optional bool bias_term = 2 [default = true]; // whether to have bias terms
-  optional FillerParameter weight_filler = 3; // The filler for the weight
-  optional FillerParameter bias_filler = 4; // The filler for the bias
+  optional FillerParameter weight_filler = 3;   // The filler for the weight
+  optional FillerParameter bias_filler = 4;     // The filler for the bias
 }
 
 // Message that stores parameters used by LRNLayer
@@ -604,15 +606,15 @@ message PoolingParameter {
   optional PoolMethod pool = 1 [default = MAX]; // The pooling method
   // Pad, kernel size, and stride are all given as a single value for equal
   // dimensions in height and width or as Y, X pairs.
-  optional uint32 pad = 4 [default = 0]; // The padding size (equal in Y, X)
-  optional uint32 pad_h = 9 [default = 0]; // The padding height
+  optional uint32 pad = 4 [default = 0];    // The padding size (equal in Y, X)
+  optional uint32 pad_h = 9 [default = 0];  // The padding height
   optional uint32 pad_w = 10 [default = 0]; // The padding width
-  optional uint32 kernel_size = 2; // The kernel size (square)
-  optional uint32 kernel_h = 5; // The kernel height
-  optional uint32 kernel_w = 6; // The kernel width
+  optional uint32 kernel_size = 2;          // The kernel size (square)
+  optional uint32 kernel_h = 5;             // The kernel height
+  optional uint32 kernel_w = 6;             // The kernel width
   optional uint32 stride = 3 [default = 1]; // The stride (equal in Y, X)
-  optional uint32 stride_h = 7; // The stride height
-  optional uint32 stride_w = 8; // The stride width
+  optional uint32 stride_h = 7;             // The stride height
+  optional uint32 stride_w = 8;             // The stride width
   enum Engine {
     DEFAULT = 0;
     CAFFE = 1;
@@ -724,24 +726,24 @@ message V0LayerParameter {
   // Parameters to specify layers with inner products.
   optional uint32 num_output = 3; // The number of outputs for the layer
   optional bool biasterm = 4 [default = true]; // whether to have bias terms
-  optional FillerParameter weight_filler = 5; // The filler for the weight
-  optional FillerParameter bias_filler = 6; // The filler for the bias
+  optional FillerParameter weight_filler = 5;  // The filler for the weight
+  optional FillerParameter bias_filler = 6;    // The filler for the bias
 
-  optional uint32 pad = 7 [default = 0]; // The padding size
-  optional uint32 kernelsize = 8; // The kernel size
-  optional uint32 group = 9 [default = 1]; // The group size for group conv
+  optional uint32 pad = 7 [default = 0];     // The padding size
+  optional uint32 kernelsize = 8;            // The kernel size
+  optional uint32 group = 9 [default = 1];   // The group size for group conv
   optional uint32 stride = 10 [default = 1]; // The stride
   enum PoolMethod {
     MAX = 0;
     AVE = 1;
     STOCHASTIC = 2;
   }
-  optional PoolMethod pool = 11 [default = MAX]; // The pooling method
+  optional PoolMethod pool = 11 [default = MAX];     // The pooling method
   optional float dropout_ratio = 12 [default = 0.5]; // dropout ratio
 
   optional uint32 local_size = 13 [default = 5]; // for local response norm
-  optional float alpha = 14 [default = 1.]; // for local response norm
-  optional float beta = 15 [default = 0.75]; // for local response norm
+  optional float alpha = 14 [default = 1.];      // for local response norm
+  optional float beta = 15 [default = 0.75];     // for local response norm
 
   // For data layers, specify the data source
   optional string source = 16;

@@ -17,7 +17,7 @@ namespace petuum {
 class VectorClockMT : public VectorClock, boost::noncopyable {
 public:
   VectorClockMT();
-  explicit VectorClockMT(const std::vector<int32_t>& ids);
+  explicit VectorClockMT(const std::vector<int32_t> &ids);
 
   // Override VectorClock
   void AddClock(int32_t id, int32_t clock = 0);
@@ -33,4 +33,4 @@ private:
   mutable SharedMutex mutex_;
 };
 
-}  // namespace petuum
+} // namespace petuum

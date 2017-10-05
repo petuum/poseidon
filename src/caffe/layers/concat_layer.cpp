@@ -7,19 +7,19 @@
 namespace caffe {
 
 template <typename Dtype>
-void ConcatLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-    vector<Blob<Dtype>*>* top, const bool init_ps, int* num_tables,
-    map<string, vector<int> >* layer_name_to_blob_global_idx) {
+void ConcatLayer<Dtype>::LayerSetUp(
+    const vector<Blob<Dtype> *> &bottom, vector<Blob<Dtype> *> *top,
+    const bool init_ps, int *num_tables,
+    map<string, vector<int>> *layer_name_to_blob_global_idx) {
   concat_dim_ = this->layer_param_.concat_param().concat_dim();
-  CHECK_GE(concat_dim_, 0) <<
-    "concat_dim should be >= 0";
-  CHECK_LE(concat_dim_, 1) <<
-    "For now concat_dim <=1, it can only concat num and channels";
+  CHECK_GE(concat_dim_, 0) << "concat_dim should be >= 0";
+  CHECK_LE(concat_dim_, 1)
+      << "For now concat_dim <=1, it can only concat num and channels";
 }
 
 template <typename Dtype>
-void ConcatLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top) {
+void ConcatLayer<Dtype>::Reshape(const vector<Blob<Dtype> *> &bottom,
+                                 vector<Blob<Dtype> *> *top) {
   // Initialize with the first blob.
   count_ = bottom[0]->count();
   num_ = bottom[0]->num();
@@ -28,7 +28,7 @@ void ConcatLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   width_ = bottom[0]->width();
   for (int i = 1; i < bottom.size(); ++i) {
     count_ += bottom[i]->count();
-    if (concat_dim_== 0) {
+    if (concat_dim_ == 0) {
       num_ += bottom[i]->num();
     } else if (concat_dim_ == 1) {
       channels_ += bottom[i]->channels();
@@ -43,42 +43,44 @@ void ConcatLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-void ConcatLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top) {
-  Dtype* top_data = (*top)[0]->mutable_cpu_data();
-  if (concat_dim_== 0) {
+void ConcatLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype> *> &bottom,
+                                     vector<Blob<Dtype> *> *top) {
+  Dtype *top_data = (*top)[0]->mutable_cpu_data();
+  if (concat_dim_ == 0) {
     int offset_num = 0;
     for (int i = 0; i < bottom.size(); ++i) {
-      const Dtype* bottom_data = bottom[i]->cpu_data();
+      const Dtype *bottom_data = bottom[i]->cpu_data();
       int num_elem = bottom[i]->count();
-      caffe_copy(num_elem, bottom_data, top_data+(*top)[0]->offset(offset_num));
+      caffe_copy(num_elem, bottom_data,
+                 top_data + (*top)[0]->offset(offset_num));
       offset_num += bottom[i]->num();
     }
   } else if (concat_dim_ == 1) {
     int offset_channel = 0;
     for (int i = 0; i < bottom.size(); ++i) {
-      const Dtype* bottom_data = bottom[i]->cpu_data();
+      const Dtype *bottom_data = bottom[i]->cpu_data();
       int num_elem =
-        bottom[i]->channels()*bottom[i]->height()*bottom[i]->width();
+          bottom[i]->channels() * bottom[i]->height() * bottom[i]->width();
       for (int n = 0; n < num_; ++n) {
-        caffe_copy(num_elem, bottom_data+bottom[i]->offset(n),
-          top_data+(*top)[0]->offset(n, offset_channel));
+        caffe_copy(num_elem, bottom_data + bottom[i]->offset(n),
+                   top_data + (*top)[0]->offset(n, offset_channel));
       }
       offset_channel += bottom[i]->channels();
-    }  // concat_dim_ is guaranteed to be 0 or 1 by LayerSetUp.
+    } // concat_dim_ is guaranteed to be 0 or 1 by LayerSetUp.
   }
 }
 
 template <typename Dtype>
-void ConcatLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom) {
-  const Dtype* top_diff = top[0]->cpu_diff();
+void ConcatLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype> *> &top,
+                                      const vector<bool> &propagate_down,
+                                      vector<Blob<Dtype> *> *bottom) {
+  const Dtype *top_diff = top[0]->cpu_diff();
   if (concat_dim_ == 0) {
     int offset_num = 0;
     for (int i = 0; i < bottom->size(); ++i) {
-      Blob<Dtype>* blob = (*bottom)[i];
+      Blob<Dtype> *blob = (*bottom)[i];
       if (propagate_down[i]) {
-        Dtype* bottom_diff = blob->mutable_cpu_diff();
+        Dtype *bottom_diff = blob->mutable_cpu_diff();
         caffe_copy(blob->count(), top_diff + top[0]->offset(offset_num),
                    bottom_diff);
       }
@@ -87,10 +89,10 @@ void ConcatLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   } else if (concat_dim_ == 1) {
     int offset_channel = 0;
     for (int i = 0; i < bottom->size(); ++i) {
-      Blob<Dtype>* blob = (*bottom)[i];
+      Blob<Dtype> *blob = (*bottom)[i];
       if (propagate_down[i]) {
-        Dtype* bottom_diff = blob->mutable_cpu_diff();
-        int num_elem = blob->channels()*blob->height()*blob->width();
+        Dtype *bottom_diff = blob->mutable_cpu_diff();
+        int num_elem = blob->channels() * blob->height() * blob->width();
         for (int n = 0; n < num_; ++n) {
           caffe_copy(num_elem, top_diff + top[0]->offset(n, offset_channel),
                      bottom_diff + blob->offset(n));
@@ -98,7 +100,7 @@ void ConcatLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
       }
       offset_channel += blob->channels();
     }
-  }  // concat_dim_ is guaranteed to be 0 or 1 by LayerSetUp.
+  } // concat_dim_ is guaranteed to be 0 or 1 by LayerSetUp.
 }
 
 #ifdef CPU_ONLY
@@ -107,4 +109,4 @@ STUB_GPU(ConcatLayer);
 
 INSTANTIATE_CLASS(ConcatLayer);
 
-}  // namespace caffe
+} // namespace caffe

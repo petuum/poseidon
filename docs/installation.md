@@ -31,7 +31,7 @@ Next, compile the Bösen key-value store, which enables distributed multi-machin
 
 Now, we are ready to compile Caffe. Install the [Caffe prerequisites](http://caffe.berkeleyvision.org/installation.html). If you are using Ubuntu 14.04, we have provided a script to do so:
     
-    sh scripts/setup_third_party.sh
+    sh ../scripts/install-pmls-caffe-dependencies-ubuntu1404.sh
 
 Enter `Y` when you are asked `Do you want to continue [Y/n]?`. 
 

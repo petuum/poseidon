@@ -7,15 +7,15 @@
 namespace caffe {
 
 template <typename Dtype>
-BaseDataLayer<Dtype>::BaseDataLayer(const LayerParameter& param)
-    : Layer<Dtype>(param),
-      transform_param_(param.transform_param()),
-      data_transformer_(transform_param_) { }
+BaseDataLayer<Dtype>::BaseDataLayer(const LayerParameter &param)
+    : Layer<Dtype>(param), transform_param_(param.transform_param()),
+      data_transformer_(transform_param_) {}
 
 template <typename Dtype>
-void BaseDataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-     vector<Blob<Dtype>*>* top, const bool init_ps, int* num_tables,
-     map<string, vector<int> >* layer_name_to_blob_global_idx) {
+void BaseDataLayer<Dtype>::LayerSetUp(
+    const vector<Blob<Dtype> *> &bottom, vector<Blob<Dtype> *> *top,
+    const bool init_ps, int *num_tables,
+    map<string, vector<int>> *layer_name_to_blob_global_idx) {
   data_transformer_.set_phase(Caffe::phase(this->thread_id_));
 
   if (top->size() == 1) {
@@ -34,7 +34,7 @@ void BaseDataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   }
   // check if we want to have mean
   if (transform_param_.has_mean_file()) {
-    const string& mean_file = transform_param_.mean_file();
+    const string &mean_file = transform_param_.mean_file();
     if (this->thread_id_ == 0) {
       LOG(INFO) << "Loading mean file from " << mean_file;
     }
@@ -55,11 +55,11 @@ void BaseDataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 
 template <typename Dtype>
 void BasePrefetchingDataLayer<Dtype>::LayerSetUp(
-    const vector<Blob<Dtype>*>& bottom, vector<Blob<Dtype>*>* top, 
-    bool init_ps, int* num_tables,
-    map<string, vector<int> >* layer_name_to_blob_global_idx) {
-  BaseDataLayer<Dtype>::LayerSetUp(bottom, top, init_ps, num_tables, 
-      layer_name_to_blob_global_idx);
+    const vector<Blob<Dtype> *> &bottom, vector<Blob<Dtype> *> *top,
+    bool init_ps, int *num_tables,
+    map<string, vector<int>> *layer_name_to_blob_global_idx) {
+  BaseDataLayer<Dtype>::LayerSetUp(bottom, top, init_ps, num_tables,
+                                   layer_name_to_blob_global_idx);
   if (!init_ps) {
     // Now, start the prefetch thread. Before calling prefetch, we make two
     // cpu_data calls so that the prefetch thread does not accidentally make
@@ -89,7 +89,7 @@ void BasePrefetchingDataLayer<Dtype>::JoinPrefetchThread() {
 
 template <typename Dtype>
 void BasePrefetchingDataLayer<Dtype>::Forward_cpu(
-    const vector<Blob<Dtype>*>& bottom, vector<Blob<Dtype>*>* top) {
+    const vector<Blob<Dtype> *> &bottom, vector<Blob<Dtype> *> *top) {
   // First, join the thread
   JoinPrefetchThread();
   // Copy the data
@@ -110,4 +110,4 @@ STUB_GPU_FORWARD(BasePrefetchingDataLayer, Forward);
 INSTANTIATE_CLASS(BaseDataLayer);
 INSTANTIATE_CLASS(BasePrefetchingDataLayer);
 
-}  // namespace caffe
+} // namespace caffe

@@ -31,4 +31,4 @@ private:
   boost::unordered_map<int32_t, int32_t> vec_clock_;
 };
 
-}  // namespace petuum
+} // namespace petuum

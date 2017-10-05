@@ -5,7 +5,7 @@
 // used to decide if a message should be allocated on heap or
 // on stack
 
-#define PETUUM_MSG_STACK_BUFF_SIZE 32  // number of bytes
+#define PETUUM_MSG_STACK_BUFF_SIZE 32 // number of bytes
 
 #include <petuum_ps_common/util/mem_block.hpp>
 
@@ -80,12 +80,9 @@ enum MsgType {
 
 struct MsgBase : boost::noncopyable {
 public:
-  MsgBase():
-    use_stack_buff_(false) {}
+  MsgBase() : use_stack_buff_(false) {}
 
-  explicit MsgBase(void *msg):
-    own_mem_(false),
-    use_stack_buff_(false) {
+  explicit MsgBase(void *msg) : own_mem_(false), use_stack_buff_(false) {
     mem_.Reset(msg);
   }
 
@@ -95,17 +92,11 @@ public:
     }
   }
 
-  uint8_t *get_mem() {
-    return mem_.get_mem();
-  }
+  uint8_t *get_mem() { return mem_.get_mem(); }
 
-  virtual size_t get_size() {
-    return sizeof(MsgType);
-  }
+  virtual size_t get_size() { return sizeof(MsgType); }
 
-  bool get_use_stack_buff() {
-    return use_stack_buff_;
-  }
+  bool get_use_stack_buff() { return use_stack_buff_; }
 
   // can be used whether or not mem is owned
   void *ReleaseMem() {
@@ -114,18 +105,18 @@ public:
   }
 
   MsgType &get_msg_type() {
-    return *(reinterpret_cast<MsgType*>(mem_.get_mem()));
+    return *(reinterpret_cast<MsgType *>(mem_.get_mem()));
   }
 
   static MsgType &get_msg_type(void *mem) {
-    return *(reinterpret_cast<MsgType*>(mem));
+    return *(reinterpret_cast<MsgType *>(mem));
   }
 
 protected:
   virtual void InitMsg() {}
 
   MemBlock mem_;
-  bool own_mem_;  // if memory is owned by MemBlock
+  bool own_mem_; // if memory is owned by MemBlock
 
   uint8_t stack_buff_[PETUUM_MSG_STACK_BUFF_SIZE];
   bool use_stack_buff_;
@@ -135,17 +126,16 @@ struct NumberedMsg : public MsgBase {
 public:
   NumberedMsg() {}
 
-  explicit NumberedMsg(void *msg):
-    MsgBase(msg) {}
+  explicit NumberedMsg(void *msg) : MsgBase(msg) {}
 
   uint64_t &get_seq_num() {
-    return *(reinterpret_cast<uint64_t*>(mem_.get_mem()
-    + MsgBase::get_size()));
+    return *(reinterpret_cast<uint64_t *>(mem_.get_mem() +
+                                          MsgBase::get_size()));
   }
 
   uint64_t &get_ack_num() {
-    return *(reinterpret_cast<uint64_t*>(mem_.get_mem() + MsgBase::get_size()
-      + sizeof(uint64_t)));
+    return *(reinterpret_cast<uint64_t *>(mem_.get_mem() + MsgBase::get_size() +
+                                          sizeof(uint64_t)));
   }
 
   virtual size_t get_size() {
@@ -163,25 +153,22 @@ public:
     InitMsg(avai_size);
   }
 
-  explicit ArbitrarySizedMsg(void *msg):
-    NumberedMsg(msg) {}
+  explicit ArbitrarySizedMsg(void *msg) : NumberedMsg(msg) {}
 
   virtual size_t get_header_size() {
     return NumberedMsg::get_size() + sizeof(size_t);
   }
 
   size_t &get_avai_size() {
-    return *(reinterpret_cast<size_t*>(mem_.get_mem()
-      + NumberedMsg::get_size()));
+    return *(reinterpret_cast<size_t *>(mem_.get_mem() +
+                                        NumberedMsg::get_size()));
   }
 
   // won't be available until the object is constructed
-  virtual size_t get_size() {
-    return get_header_size() + get_avai_size();
-  }
+  virtual size_t get_size() { return get_header_size() + get_avai_size(); }
 
 protected:
-  virtual void InitMsg(size_t avai_size){
+  virtual void InitMsg(size_t avai_size) {
     NumberedMsg::InitMsg();
     get_avai_size() = avai_size;
   }
@@ -195,9 +182,9 @@ struct MemTransferMsg : public NumberedMsg {
 public:
   MemTransferMsg() {
     if (get_size() > PETUUM_MSG_STACK_BUFF_SIZE) {
-       own_mem_ = true;
-       use_stack_buff_ = false;
-       mem_.Alloc(get_size());
+      own_mem_ = true;
+      use_stack_buff_ = false;
+      mem_.Alloc(get_size());
     } else {
       own_mem_ = false;
       use_stack_buff_ = true;
@@ -206,16 +193,13 @@ public:
     InitMsg();
   }
 
-  explicit MemTransferMsg(void *msg):
-    NumberedMsg(msg) {}
+  explicit MemTransferMsg(void *msg) : NumberedMsg(msg) {}
 
-  size_t get_size() {
-    return NumberedMsg::get_size() + sizeof(void*);
-  }
+  size_t get_size() { return NumberedMsg::get_size() + sizeof(void *); }
 
-  void*& get_mem_ptr() {
-    return *(reinterpret_cast<void**>(mem_.get_mem()
-      + NumberedMsg::get_size()));
+  void *&get_mem_ptr() {
+    return *(reinterpret_cast<void **>(mem_.get_mem() +
+                                       NumberedMsg::get_size()));
   }
 
 protected:
@@ -224,5 +208,4 @@ protected:
     get_msg_type() = kMemTransfer;
   }
 };
-
 }

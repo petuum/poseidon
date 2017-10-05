@@ -19,13 +19,14 @@ public:
 
   AbstractRowOpLog *FindOpLog(int32_t row_id);
   void InsertOpLog(int32_t row_id, AbstractRowOpLog *row_oplog);
-  void SerializeByServer(std::map<int32_t, void* > *bytes_by_server,
+  void SerializeByServer(std::map<int32_t, void *> *bytes_by_server,
                          bool dense_serialize = false);
+
 private:
-  std::unordered_map<int32_t,  AbstractRowOpLog*> oplog_map_;
+  std::unordered_map<int32_t, AbstractRowOpLog *> oplog_map_;
   const int32_t table_id_;
   const size_t update_size_;
   const int32_t comm_channel_idx_;
 };
 
-}   // namespace petuum
+} // namespace petuum

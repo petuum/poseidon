@@ -19,14 +19,14 @@ namespace caffe {
  */
 template <typename Dtype>
 void CuDNNConvolutionLayer<Dtype>::LayerSetUp(
-    const vector<Blob<Dtype>*>& bottom, vector<Blob<Dtype>*>* top,
-    const bool init_ps, int* num_tables,
-    map<string, vector<int> >* layer_name_to_blob_global_idx) {
-  ConvolutionLayer<Dtype>::LayerSetUp(bottom, top, init_ps,
-      num_tables, layer_name_to_blob_global_idx);
+    const vector<Blob<Dtype> *> &bottom, vector<Blob<Dtype> *> *top,
+    const bool init_ps, int *num_tables,
+    map<string, vector<int>> *layer_name_to_blob_global_idx) {
+  ConvolutionLayer<Dtype>::LayerSetUp(bottom, top, init_ps, num_tables,
+                                      layer_name_to_blob_global_idx);
   // Initialize CUDA streams and cuDNN.
-  stream_         = new cudaStream_t[this->group_ * CUDNN_STREAMS_PER_GROUP];
-  handle_         = new cudnnHandle_t[this->group_ * CUDNN_STREAMS_PER_GROUP];
+  stream_ = new cudaStream_t[this->group_ * CUDNN_STREAMS_PER_GROUP];
+  handle_ = new cudnnHandle_t[this->group_ * CUDNN_STREAMS_PER_GROUP];
   workspaceSizeInBytes = 0;
   workspace = NULL;
 
@@ -37,14 +37,15 @@ void CuDNNConvolutionLayer<Dtype>::LayerSetUp(
   }
 
   // Set the indexing parameters.
-  weight_offset_ = (this->num_output_ / this->group_)
-      * (this->channels_ / this->group_) * this->kernel_h_ * this->kernel_w_;
+  weight_offset_ = (this->num_output_ / this->group_) *
+                   (this->channels_ / this->group_) * this->kernel_h_ *
+                   this->kernel_w_;
   bias_offset_ = (this->num_output_ / this->group_);
 
   // Create filter descriptor.
-  cudnn::createFilterDesc<Dtype>(&filter_desc_,
-      this->num_output_ / this->group_, this->channels_ / this->group_,
-      this->kernel_h_, this->kernel_w_);
+  cudnn::createFilterDesc<Dtype>(
+      &filter_desc_, this->num_output_ / this->group_,
+      this->channels_ / this->group_, this->kernel_h_, this->kernel_w_);
 
   // Create tensor descriptor(s) for data and corresponding convolution(s).
   for (int i = 0; i < bottom.size(); i++) {
@@ -67,45 +68,43 @@ void CuDNNConvolutionLayer<Dtype>::LayerSetUp(
 }
 
 template <typename Dtype>
-void CuDNNConvolutionLayer<Dtype>::Reshape(
-    const vector<Blob<Dtype>*>& bottom, vector<Blob<Dtype>*>* top) {
+void CuDNNConvolutionLayer<Dtype>::Reshape(const vector<Blob<Dtype> *> &bottom,
+                                           vector<Blob<Dtype> *> *top) {
   ConvolutionLayer<Dtype>::Reshape(bottom, top);
-  bottom_offset_ = (this->channels_ / this->group_)
-      * this->height_ * this->width_;
-  top_offset_ = (this->num_output_ / this->group_)
-      * this->height_out_ * this->width_out_;
+  bottom_offset_ =
+      (this->channels_ / this->group_) * this->height_ * this->width_;
+  top_offset_ =
+      (this->num_output_ / this->group_) * this->height_out_ * this->width_out_;
 
   for (int i = 0; i < bottom.size(); i++) {
-    cudnn::setTensor4dDesc<Dtype>(&bottom_descs_[i],
-        this->num_,
-        this->channels_ / this->group_,
+    cudnn::setTensor4dDesc<Dtype>(
+        &bottom_descs_[i], this->num_, this->channels_ / this->group_,
         this->height_, this->width_,
         this->channels_ * this->height_ * this->width_,
-        this->height_ * this->width_,
-        this->width_, 1);
-    cudnn::setTensor4dDesc<Dtype>(&top_descs_[i],
-        this->num_,
-        this->num_output_ / this->group_,
+        this->height_ * this->width_, this->width_, 1);
+    cudnn::setTensor4dDesc<Dtype>(
+        &top_descs_[i], this->num_, this->num_output_ / this->group_,
         this->height_out_, this->width_out_,
         this->num_output_ * this->height_out_ * this->width_out_,
-        this->height_out_ * this->width_out_,
-        this->width_out_, 1);
+        this->height_out_ * this->width_out_, this->width_out_, 1);
     cudnn::setConvolutionDesc<Dtype>(&conv_descs_[i], bottom_descs_[i],
-        filter_desc_, this->pad_h_, this->pad_w_,
-        this->stride_h_, this->stride_w_);
+                                     filter_desc_, this->pad_h_, this->pad_w_,
+                                     this->stride_h_, this->stride_w_);
   }
 
   // Tensor descriptor for bias.
   if (this->bias_term_) {
-    cudnn::setTensor4dDesc<Dtype>(&bias_desc_,
-        1, this->num_output_ / this->group_, 1, 1);
+    cudnn::setTensor4dDesc<Dtype>(&bias_desc_, 1,
+                                  this->num_output_ / this->group_, 1, 1);
   }
 }
 
 template <typename Dtype>
 CuDNNConvolutionLayer<Dtype>::~CuDNNConvolutionLayer() {
   // Check that handles have ben setup before destroying
-  if (!handles_setup_) { return; }
+  if (!handles_setup_) {
+    return;
+  }
   for (int i = 0; i < bottom_descs_.size(); i++) {
     cudnnDestroyTensorDescriptor(bottom_descs_[i]);
     cudnnDestroyTensorDescriptor(top_descs_[i]);
@@ -121,11 +120,11 @@ CuDNNConvolutionLayer<Dtype>::~CuDNNConvolutionLayer() {
     cudnnDestroy(handle_[g]);
   }
 
-  delete [] stream_;
-  delete [] handle_;
+  delete[] stream_;
+  delete[] handle_;
 }
 
 INSTANTIATE_CLASS(CuDNNConvolutionLayer);
 
-}   // namespace caffe
+} // namespace caffe
 #endif

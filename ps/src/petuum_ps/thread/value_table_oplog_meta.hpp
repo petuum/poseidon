@@ -20,7 +20,7 @@ public:
   virtual ~ValueTableOpLogMeta();
 
   void InsertMergeRowOpLogMeta(int32_t row_id,
-                               const RowOpLogMeta& row_oplog_meta);
+                               const RowOpLogMeta &row_oplog_meta);
   virtual size_t GetCleanNumNewOpLogMeta();
 
   int32_t GetAndClearNextInOrder();
@@ -54,5 +54,4 @@ private:
 
   size_t num_new_oplog_metas_;
 };
-
 }

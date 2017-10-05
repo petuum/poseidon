@@ -16,16 +16,13 @@ class ProcessStorage;
 // manipulation of reference count.
 class RowAccessor : boost::noncopyable {
 public:
-  RowAccessor() : client_row_ptr_(0) { }
-  ~RowAccessor() {
-    Clear();
-  }
+  RowAccessor() : client_row_ptr_(0) {}
+  ~RowAccessor() { Clear(); }
 
   // The returned reference is guaranteed to be valid only during the
   // lifetime of this RowAccessor.
-  template<typename ROW>
-  inline const ROW& Get() {
-    return *(dynamic_cast<ROW*>(client_row_ptr_->GetRowDataPtr()));
+  template <typename ROW> inline const ROW &Get() {
+    return *(dynamic_cast<ROW *>(client_row_ptr_->GetRowDataPtr()));
   }
 
 private:
@@ -52,36 +49,31 @@ private:
   }
 
   // Does not take ownership of client_row_ptr.
-  inline void SetClientRow(ClientRow* client_row_ptr) {
-    //Clear();
+  inline void SetClientRow(ClientRow *client_row_ptr) {
+    // Clear();
     client_row_ptr_ = client_row_ptr;
     client_row_ptr_->IncRef();
   }
 
   // Return client row which will stay alive throughout the lifetime of
   // RowAccessor.
-  inline const ClientRow* GetClientRow() {
-    return client_row_ptr_;
-  }
+  inline const ClientRow *GetClientRow() { return client_row_ptr_; }
 
-  AbstractRow *GetRowData() {
-    return client_row_ptr_->GetRowDataPtr();
-  }
+  AbstractRow *GetRowData() { return client_row_ptr_->GetRowDataPtr(); }
 
-  ClientRow* client_row_ptr_;
+  ClientRow *client_row_ptr_;
 };
 
 class ThreadRowAccessor : boost::noncopyable {
 public:
-  ThreadRowAccessor() : row_data_ptr_(0) { }
-  ~ThreadRowAccessor() { }
+  ThreadRowAccessor() : row_data_ptr_(0) {}
+  ~ThreadRowAccessor() {}
 
   // The returned reference is guaranteed to be valid only during the
   // lifetime of this RowAccessor.
-  template<typename ROW>
-  inline const ROW& Get() {
-    //LOG(INFO) << "get " << row_data_ptr_;
-    return *(static_cast<ROW*>(row_data_ptr_));
+  template <typename ROW> inline const ROW &Get() {
+    // LOG(INFO) << "get " << row_data_ptr_;
+    return *(static_cast<ROW *>(row_data_ptr_));
   }
 
 private:
@@ -95,4 +87,4 @@ private:
   AbstractRow *row_data_ptr_;
 };
 
-}  // namespace petuum
+} // namespace petuum

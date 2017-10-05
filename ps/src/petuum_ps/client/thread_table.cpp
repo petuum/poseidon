@@ -10,12 +10,11 @@
 
 namespace petuum {
 
-ThreadTable::ThreadTable(
-    const AbstractRow *sample_row, int32_t row_oplog_type,
-    size_t dense_row_oplog_capacity):
-    oplog_index_(GlobalContext::get_num_comm_channels_per_client()),
-    sample_row_(sample_row),
-    dense_row_oplog_capacity_(dense_row_oplog_capacity) {
+ThreadTable::ThreadTable(const AbstractRow *sample_row, int32_t row_oplog_type,
+                         size_t dense_row_oplog_capacity)
+    : oplog_index_(GlobalContext::get_num_comm_channels_per_client()),
+      sample_row_(sample_row),
+      dense_row_oplog_capacity_(dense_row_oplog_capacity) {
 
   {
     int32_t my_id = ThreadContext::get_id();
@@ -23,10 +22,10 @@ ThreadTable::ThreadTable(
     int32_t thread_id_min = GlobalContext::get_thread_id_min(my_client_id);
     int32_t my_index = my_id - thread_id_min;
     size_t num_table_threads = GlobalContext::get_num_table_threads();
-    update_count_
-        = (GlobalContext::get_thread_oplog_batch_size() / num_table_threads)
-        * my_index;
-    //LOG(INFO) << "update count = " << update_count_;
+    update_count_ =
+        (GlobalContext::get_thread_oplog_batch_size() / num_table_threads) *
+        my_index;
+    // LOG(INFO) << "update count = " << update_count_;
   }
 
   ApplyThreadOpLog_ = &ThreadTable::ApplyThreadOpLogSSP;
@@ -42,8 +41,8 @@ ThreadTable::ThreadTable(
       CreateRowOpLog_ = CreateRowOpLog::CreateSparseVectorMetaRowOpLog;
     }
 
-    if (GlobalContext::get_update_sort_policy() == RelativeMagnitude
-        || GlobalContext::get_update_sort_policy() == FIFO_N_ReMag) {
+    if (GlobalContext::get_update_sort_policy() == RelativeMagnitude ||
+        GlobalContext::get_update_sort_policy() == FIFO_N_ReMag) {
       ApplyThreadOpLog_ = &ThreadTable::ApplyThreadOpLogGetImportance;
     }
   } else {
@@ -70,17 +69,16 @@ ThreadTable::~ThreadTable() {
 }
 
 void ThreadTable::UpdateOpLogClockSSPAggr(AbstractRowOpLog *row_oplog) {
-  MetaRowOpLog *meta_row_oplog
-      = dynamic_cast<MetaRowOpLog*>(row_oplog);
+  MetaRowOpLog *meta_row_oplog = dynamic_cast<MetaRowOpLog *>(row_oplog);
   meta_row_oplog->GetMeta().set_clock(ThreadContext::get_clock());
 }
 
 void ThreadTable::IndexUpdate(int32_t row_id) {
   int32_t partition_num = GlobalContext::GetPartitionCommChannelIndex(row_id);
-  //LOG(INFO) << "partition num = " << partition_num
+  // LOG(INFO) << "partition num = " << partition_num
   //          << " row id = " << row_id;
   oplog_index_[partition_num].insert(row_id);
-  //LOG(INFO) << "done";
+  // LOG(INFO) << "done";
 }
 
 size_t ThreadTable::IndexUpdateAndGetCount(int32_t row_id, size_t num_updates) {
@@ -90,9 +88,7 @@ size_t ThreadTable::IndexUpdateAndGetCount(int32_t row_id, size_t num_updates) {
   return update_count_;
 }
 
-void ThreadTable::ResetUpdateCount() {
-  update_count_ = 0;
-}
+void ThreadTable::ResetUpdateCount() { update_count_ = 0; }
 
 void ThreadTable::AddToUpdateCount(size_t num_updates) {
   update_count_ += num_updates;
@@ -101,8 +97,7 @@ void ThreadTable::AddToUpdateCount(size_t num_updates) {
 void ThreadTable::FlushOpLogIndex(TableOpLogIndex &table_oplog_index) {
   for (int32_t i = 0; i < GlobalContext::get_num_comm_channels_per_client();
        ++i) {
-    const std::unordered_set<int32_t> &partition_oplog_index
-        = oplog_index_[i];
+    const std::unordered_set<int32_t> &partition_oplog_index = oplog_index_[i];
     table_oplog_index.AddIndex(i, partition_oplog_index);
     oplog_index_[i].clear();
   }
@@ -110,8 +105,8 @@ void ThreadTable::FlushOpLogIndex(TableOpLogIndex &table_oplog_index) {
 }
 
 AbstractRow *ThreadTable::GetRow(int32_t row_id) {
-  boost::unordered_map<int32_t, AbstractRow* >::iterator row_iter
-      = row_storage_.find(row_id);
+  boost::unordered_map<int32_t, AbstractRow *>::iterator row_iter =
+      row_storage_.find(row_id);
   if (row_iter == row_storage_.end()) {
     return 0;
   }
@@ -120,8 +115,8 @@ AbstractRow *ThreadTable::GetRow(int32_t row_id) {
 
 void ThreadTable::InsertRow(int32_t row_id, const AbstractRow *to_insert) {
   AbstractRow *row = to_insert->Clone();
-  boost::unordered_map<int32_t, AbstractRow* >::iterator row_iter
-      = row_storage_.find(row_id);
+  boost::unordered_map<int32_t, AbstractRow *>::iterator row_iter =
+      row_storage_.find(row_id);
   if (row_iter != row_storage_.end()) {
     delete row_iter->second;
     row_iter->second = row;
@@ -129,8 +124,8 @@ void ThreadTable::InsertRow(int32_t row_id, const AbstractRow *to_insert) {
     row_storage_.insert(std::make_pair(row_id, row));
   }
 
-  boost::unordered_map<int32_t, AbstractRowOpLog* >::iterator oplog_iter
-      = oplog_map_.find(row_id);
+  boost::unordered_map<int32_t, AbstractRowOpLog *>::iterator oplog_iter =
+      oplog_map_.find(row_id);
   if (oplog_iter != oplog_map_.end()) {
     int32_t column_id;
     void *delta = oplog_iter->second->BeginIterate(&column_id);
@@ -178,12 +173,12 @@ void ThreadTable::BatchInc(int32_t row_id, const int32_t *column_ids,
     row_oplog = oplog_iter->second;
   }
 
-  const uint8_t* deltas_uint8 = reinterpret_cast<const uint8_t*>(deltas);
+  const uint8_t *deltas_uint8 = reinterpret_cast<const uint8_t *>(deltas);
 
   for (int i = 0; i < num_updates; ++i) {
     void *oplog_delta = row_oplog->FindCreate(column_ids[i]);
-    sample_row_->AddUpdates(column_ids[i], oplog_delta, deltas_uint8
-                            + sample_row_->get_update_size()*i);
+    sample_row_->AddUpdates(column_ids[i], oplog_delta,
+                            deltas_uint8 + sample_row_->get_update_size() * i);
   }
 
   auto row_iter = row_storage_.find(row_id);
@@ -203,12 +198,13 @@ void ThreadTable::DenseBatchInc(int32_t row_id, const void *updates,
     row_oplog->OverwriteWithDenseUpdate(updates, index_st, num_updates);
   } else {
     row_oplog = oplog_iter->second;
-    const uint8_t* updates_uint8 = reinterpret_cast<const uint8_t*>(updates);
+    const uint8_t *updates_uint8 = reinterpret_cast<const uint8_t *>(updates);
     for (int i = 0; i < num_updates; ++i) {
       int32_t col_id = i + index_st;
       void *oplog_update = row_oplog->FindCreate(col_id);
-      sample_row_->AddUpdates(col_id, oplog_update, updates_uint8
-                              + sample_row_->get_update_size()*i);
+      sample_row_->AddUpdates(col_id, oplog_update,
+                              updates_uint8 +
+                                  sample_row_->get_update_size() * i);
     }
   }
 
@@ -220,7 +216,7 @@ void ThreadTable::DenseBatchInc(int32_t row_id, const void *updates,
 
 void ThreadTable::FlushCache(AbstractProcessStorage &process_storage,
                              AbstractOpLog &table_oplog,
-			     const AbstractRow *sample_row) {
+                             const AbstractRow *sample_row) {
   FlushCacheOpLog(process_storage, table_oplog, sample_row);
 
   if (row_storage_.size() == 0)
@@ -251,16 +247,17 @@ void ThreadTable::FlushCacheOpLog(AbstractProcessStorage &process_storage,
     RowAccessor row_accessor;
     ClientRow *client_row = process_storage.Find(row_id, &row_accessor);
 
-    (this->*ApplyThreadOpLog_)(&oplog_accessor, client_row,
-                               oplog_iter->second, row_id);
+    (this->*ApplyThreadOpLog_)(&oplog_accessor, client_row, oplog_iter->second,
+                               row_id);
     delete oplog_iter->second;
   }
   oplog_map_.clear();
 }
 
-void ThreadTable::ApplyThreadOpLogSSP(
-    OpLogAccessor *oplog_accessor, ClientRow *client_row,
-    AbstractRowOpLog *row_oplog, int32_t row_id) {
+void ThreadTable::ApplyThreadOpLogSSP(OpLogAccessor *oplog_accessor,
+                                      ClientRow *client_row,
+                                      AbstractRowOpLog *row_oplog,
+                                      int32_t row_id) {
 
   int32_t partition_num = GlobalContext::GetPartitionCommChannelIndex(row_id);
 
@@ -279,9 +276,10 @@ void ThreadTable::ApplyThreadOpLogSSP(
   }
 }
 
-void ThreadTable::ApplyThreadOpLogGetImportance(
-    OpLogAccessor *oplog_accessor, ClientRow *client_row,
-    AbstractRowOpLog *row_oplog, int32_t row_id) {
+void ThreadTable::ApplyThreadOpLogGetImportance(OpLogAccessor *oplog_accessor,
+                                                ClientRow *client_row,
+                                                AbstractRowOpLog *row_oplog,
+                                                int32_t row_id) {
 
   int32_t partition_num = GlobalContext::GetPartitionCommChannelIndex(row_id);
 
@@ -294,16 +292,16 @@ void ThreadTable::ApplyThreadOpLogGetImportance(
 
     oplog_index_[partition_num].insert(row_id);
     if (client_row != 0) {
-      importance += client_row->GetRowDataPtr()->ApplyIncGetImportance(
-          column_id, delta);
+      importance +=
+          client_row->GetRowDataPtr()->ApplyIncGetImportance(column_id, delta);
     } else {
       importance += sample_row_->GetImportance(column_id, delta);
     }
     delta = row_oplog->Next(&column_id);
   }
 
-  MetaRowOpLog *meta_row_oplog
-      = dynamic_cast<MetaRowOpLog*>(oplog_accessor->get_row_oplog());
+  MetaRowOpLog *meta_row_oplog =
+      dynamic_cast<MetaRowOpLog *>(oplog_accessor->get_row_oplog());
   meta_row_oplog->GetMeta().accum_importance(importance);
 }
 }

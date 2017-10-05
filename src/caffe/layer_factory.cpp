@@ -11,8 +11,8 @@ namespace caffe {
 
 // Get convolution layer according to engine.
 template <typename Dtype>
-ConvolutionLayer<Dtype>* GetConvolutionLayer(const string& name,
-    const LayerParameter& param) {
+ConvolutionLayer<Dtype> *GetConvolutionLayer(const string &name,
+                                             const LayerParameter &param) {
   ConvolutionParameter_Engine engine = param.convolution_param().engine();
   if (engine == ConvolutionParameter_Engine_DEFAULT) {
     engine = ConvolutionParameter_Engine_CAFFE;
@@ -31,15 +31,15 @@ ConvolutionLayer<Dtype>* GetConvolutionLayer(const string& name,
   }
 }
 
-template ConvolutionLayer<float>* GetConvolutionLayer(const string& name,
-    const LayerParameter& param);
-template ConvolutionLayer<double>* GetConvolutionLayer(const string& name,
-    const LayerParameter& param);
+template ConvolutionLayer<float> *
+GetConvolutionLayer(const string &name, const LayerParameter &param);
+template ConvolutionLayer<double> *
+GetConvolutionLayer(const string &name, const LayerParameter &param);
 
 // Get pooling layer according to engine.
 template <typename Dtype>
-PoolingLayer<Dtype>* GetPoolingLayer(const string& name,
-    const LayerParameter& param) {
+PoolingLayer<Dtype> *GetPoolingLayer(const string &name,
+                                     const LayerParameter &param) {
   PoolingParameter_Engine engine = param.pooling_param().engine();
   if (engine == PoolingParameter_Engine_DEFAULT) {
     engine = PoolingParameter_Engine_CAFFE;
@@ -58,15 +58,15 @@ PoolingLayer<Dtype>* GetPoolingLayer(const string& name,
   }
 }
 
-template PoolingLayer<float>* GetPoolingLayer(const string& name,
-    const LayerParameter& param);
-template PoolingLayer<double>* GetPoolingLayer(const string& name,
-    const LayerParameter& param);
+template PoolingLayer<float> *GetPoolingLayer(const string &name,
+                                              const LayerParameter &param);
+template PoolingLayer<double> *GetPoolingLayer(const string &name,
+                                               const LayerParameter &param);
 
 // Get relu layer according to engine.
 template <typename Dtype>
-ReLULayer<Dtype>* GetReLULayer(const string& name,
-    const LayerParameter& param) {
+ReLULayer<Dtype> *GetReLULayer(const string &name,
+                               const LayerParameter &param) {
   ReLUParameter_Engine engine = param.relu_param().engine();
   if (engine == ReLUParameter_Engine_DEFAULT) {
     engine = ReLUParameter_Engine_CAFFE;
@@ -85,15 +85,15 @@ ReLULayer<Dtype>* GetReLULayer(const string& name,
   }
 }
 
-template ReLULayer<float>* GetReLULayer(const string& name,
-    const LayerParameter& param);
-template ReLULayer<double>* GetReLULayer(const string& name,
-    const LayerParameter& param);
+template ReLULayer<float> *GetReLULayer(const string &name,
+                                        const LayerParameter &param);
+template ReLULayer<double> *GetReLULayer(const string &name,
+                                         const LayerParameter &param);
 
 // Get sigmoid layer according to engine.
 template <typename Dtype>
-SigmoidLayer<Dtype>* GetSigmoidLayer(const string& name,
-    const LayerParameter& param) {
+SigmoidLayer<Dtype> *GetSigmoidLayer(const string &name,
+                                     const LayerParameter &param) {
   SigmoidParameter_Engine engine = param.sigmoid_param().engine();
   if (engine == SigmoidParameter_Engine_DEFAULT) {
     engine = SigmoidParameter_Engine_CAFFE;
@@ -112,15 +112,15 @@ SigmoidLayer<Dtype>* GetSigmoidLayer(const string& name,
   }
 }
 
-template SigmoidLayer<float>* GetSigmoidLayer(const string& name,
-    const LayerParameter& param);
-template SigmoidLayer<double>* GetSigmoidLayer(const string& name,
-    const LayerParameter& param);
+template SigmoidLayer<float> *GetSigmoidLayer(const string &name,
+                                              const LayerParameter &param);
+template SigmoidLayer<double> *GetSigmoidLayer(const string &name,
+                                               const LayerParameter &param);
 
 // Get tanh layer according to engine.
 template <typename Dtype>
-TanHLayer<Dtype>* GetTanHLayer(const string& name,
-    const LayerParameter& param) {
+TanHLayer<Dtype> *GetTanHLayer(const string &name,
+                               const LayerParameter &param) {
   TanHParameter_Engine engine = param.tanh_param().engine();
   if (engine == TanHParameter_Engine_DEFAULT) {
     engine = TanHParameter_Engine_CAFFE;
@@ -139,15 +139,15 @@ TanHLayer<Dtype>* GetTanHLayer(const string& name,
   }
 }
 
-template TanHLayer<float>* GetTanHLayer(const string& name,
-    const LayerParameter& param);
-template TanHLayer<double>* GetTanHLayer(const string& name,
-    const LayerParameter& param);
+template TanHLayer<float> *GetTanHLayer(const string &name,
+                                        const LayerParameter &param);
+template TanHLayer<double> *GetTanHLayer(const string &name,
+                                         const LayerParameter &param);
 
 // Get softmax layer according to engine.
 template <typename Dtype>
-SoftmaxLayer<Dtype>* GetSoftmaxLayer(const string& name,
-    const LayerParameter& param) {
+SoftmaxLayer<Dtype> *GetSoftmaxLayer(const string &name,
+                                     const LayerParameter &param) {
   SoftmaxParameter_Engine engine = param.softmax_param().engine();
   if (engine == SoftmaxParameter_Engine_DEFAULT) {
     engine = SoftmaxParameter_Engine_CAFFE;
@@ -166,18 +166,17 @@ SoftmaxLayer<Dtype>* GetSoftmaxLayer(const string& name,
   }
 }
 
-template SoftmaxLayer<float>* GetSoftmaxLayer(const string& name,
-    const LayerParameter& param);
-template SoftmaxLayer<double>* GetSoftmaxLayer(const string& name,
-    const LayerParameter& param);
+template SoftmaxLayer<float> *GetSoftmaxLayer(const string &name,
+                                              const LayerParameter &param);
+template SoftmaxLayer<double> *GetSoftmaxLayer(const string &name,
+                                               const LayerParameter &param);
 
 // A function to get a specific layer from the specification given in
 // LayerParameter. Ideally this would be replaced by a factory pattern,
 // but we will leave it this way for now.
-template <typename Dtype>
-Layer<Dtype>* GetLayer(const LayerParameter& param) {
-  const string& name = param.name();
-  const LayerParameter_LayerType& type = param.type();
+template <typename Dtype> Layer<Dtype> *GetLayer(const LayerParameter &param) {
+  const string &name = param.name();
+  const LayerParameter_LayerType &type = param.type();
   switch (type) {
   case LayerParameter_LayerType_ACCURACY:
     return new AccuracyLayer<Dtype>(param);
@@ -192,7 +191,7 @@ Layer<Dtype>* GetLayer(const LayerParameter& param) {
   case LayerParameter_LayerType_CONTRASTIVE_LOSS:
     return new ContrastiveLossLayer<Dtype>(param);
   case LayerParameter_LayerType_CONVOLUTION:
-    return GetConvolutionLayer<Dtype>(name, param);	
+    return GetConvolutionLayer<Dtype>(name, param);
   case LayerParameter_LayerType_DATA:
     return new DataLayer<Dtype>(param);
   case LayerParameter_LayerType_DROPOUT:
@@ -212,7 +211,7 @@ Layer<Dtype>* GetLayer(const LayerParameter& param) {
   case LayerParameter_LayerType_HINGE_LOSS:
     return new HingeLossLayer<Dtype>(param);
   case LayerParameter_LayerType_IMAGE_DATA:
-    return new ImageDataLayer<Dtype>(param);	
+    return new ImageDataLayer<Dtype>(param);
   case LayerParameter_LayerType_IM2COL:
     return new Im2colLayer<Dtype>(param);
   case LayerParameter_LayerType_INFOGAIN_LOSS:
@@ -257,10 +256,10 @@ Layer<Dtype>* GetLayer(const LayerParameter& param) {
     LOG(FATAL) << "Layer " << name << " has unknown type " << type;
   }
   // just to suppress old compiler warnings.
-  return (Layer<Dtype>*)(NULL);
+  return (Layer<Dtype> *)(NULL);
 }
 
-template Layer<float>* GetLayer(const LayerParameter& param);
-template Layer<double>* GetLayer(const LayerParameter& param);
+template Layer<float> *GetLayer(const LayerParameter &param);
+template Layer<double> *GetLayer(const LayerParameter &param);
 
-}  // namespace caffe
+} // namespace caffe

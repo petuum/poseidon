@@ -9,7 +9,7 @@ namespace petuum {
 class ServerVersionMgr : boost::noncopyable {
 public:
   ServerVersionMgr(const std::vector<int32_t> &server_ids);
-  ~ServerVersionMgr() { }
+  ~ServerVersionMgr() {}
 
   // Server versions have an upper bound which is the version number
   // of the bg worker. Increment that whenever bg worker's version number
@@ -22,6 +22,7 @@ public:
   bool SetServerVersion(int32_t server_id, uint32_t version);
   uint32_t GetMinVersion();
   uint32_t GetVersionUpperBound();
+
 private:
   bool IsUniqueMin(int32_t server_id);
   boost::unordered_map<int32_t, uint32_t> version_map_;

@@ -17,10 +17,10 @@ namespace petuum {
 
 class OpLogMeta : boost::noncopyable {
 public:
-  OpLogMeta() { }
+  OpLogMeta() {}
 
   ~OpLogMeta() {
-    for(auto &oplog_pair : table_oplog_map_) {
+    for (auto &oplog_pair : table_oplog_map_) {
       delete oplog_pair.second;
     }
   }
@@ -33,52 +33,39 @@ public:
     if (GlobalContext::get_naive_table_oplog_meta()) {
       table_oplog_meta = new NaiveTableOpLogMeta(sample_row);
     } else {
-      UpdateSortPolicy update_sort_policy
-          = GlobalContext::get_update_sort_policy();
+      UpdateSortPolicy update_sort_policy =
+          GlobalContext::get_update_sort_policy();
 
-      switch(update_sort_policy) {
-        case FixedOrder:
-          {
-            if (table_size > 0) {
-              table_oplog_meta
-                  = new FixedTableOpLogMetaDense(sample_row, table_size);
-            } else {
-              table_oplog_meta
-                  = new RandomTableOpLogMeta(sample_row);
-            }
-          }
-          break;
-        case Random:
-          {
-            if (table_size > 0) {
-              table_oplog_meta
-                  = new RandomTableOpLogMetaDense(sample_row, table_size);
-            } else {
-              table_oplog_meta
-                  = new RandomTableOpLogMeta(sample_row);
-            }
-          }
-          break;
-        case RelativeMagnitude:
-          {
-            if (table_size == 0 || GlobalContext::get_use_aprox_sort()) {
-              table_oplog_meta
-                  = new ValueTableOpLogMetaApprox(sample_row);
-            } else {
-              table_oplog_meta
-                  = new ValueTableOpLogMeta(sample_row, table_size);
-            }
-          }
-          break;
-        default:
-          LOG(FATAL) << "Unsupported update_sort_policy = "
-                     << update_sort_policy;
+      switch (update_sort_policy) {
+      case FixedOrder: {
+        if (table_size > 0) {
+          table_oplog_meta =
+              new FixedTableOpLogMetaDense(sample_row, table_size);
+        } else {
+          table_oplog_meta = new RandomTableOpLogMeta(sample_row);
+        }
+      } break;
+      case Random: {
+        if (table_size > 0) {
+          table_oplog_meta =
+              new RandomTableOpLogMetaDense(sample_row, table_size);
+        } else {
+          table_oplog_meta = new RandomTableOpLogMeta(sample_row);
+        }
+      } break;
+      case RelativeMagnitude: {
+        if (table_size == 0 || GlobalContext::get_use_aprox_sort()) {
+          table_oplog_meta = new ValueTableOpLogMetaApprox(sample_row);
+        } else {
+          table_oplog_meta = new ValueTableOpLogMeta(sample_row, table_size);
+        }
+      } break;
+      default:
+        LOG(FATAL) << "Unsupported update_sort_policy = " << update_sort_policy;
       }
-
     }
 
-    table_oplog_map_.insert(
-        std::make_pair(table_id, table_oplog_meta));
+    table_oplog_map_.insert(std::make_pair(table_id, table_oplog_meta));
 
     return table_oplog_meta;
   }
@@ -100,7 +87,6 @@ public:
   }
 
 private:
-  std::map<int32_t, AbstractTableOpLogMeta*> table_oplog_map_;
+  std::map<int32_t, AbstractTableOpLogMeta *> table_oplog_map_;
 };
-
 }

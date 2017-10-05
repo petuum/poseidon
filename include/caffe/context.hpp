@@ -16,7 +16,7 @@ namespace util {
 // string and string, similar to google::CommandLineFlagInfo.
 class Context {
 public:
-  static Context& get_instance();
+  static Context &get_instance();
   ~Context();
 
   int get_int32(std::string key);
@@ -28,51 +28,50 @@ public:
   void set(std::string key, double value);
   void set(std::string key, bool value);
   void set(std::string key, std::string value);
-  
+
   static int num_app_threads() { return get_instance().num_app_threads_; }
   static int num_rows_per_table() { return get_instance().num_rows_per_table_; }
 
   // SVB
   static bool svb_completed() { return get_instance().svb_completed_; }
-  static void set_svb_completed(const bool value) { 
-    get_instance().svb_completed_ = value; 
+  static void set_svb_completed(const bool value) {
+    get_instance().svb_completed_ = value;
   }
   static bool use_svb() { return get_instance().use_svb_; }
   static void set_use_svb(const bool value) { get_instance().use_svb_ = value; }
   static int num_ip_layers() { return get_instance().num_ip_layers_; }
   static void set_num_ip_layers(const int value) {
-    get_instance().num_ip_layers_ = value; 
-  } 
-  static std::vector<caffe::SufficientVectorQueue*>& local_sv_queues() {
+    get_instance().num_ip_layers_ = value;
+  }
+  static std::vector<caffe::SufficientVectorQueue *> &local_sv_queues() {
     return get_instance().local_sv_queues_;
   }
-  static std::vector<caffe::SufficientVectorQueue*>& remote_sv_queues() {
+  static std::vector<caffe::SufficientVectorQueue *> &remote_sv_queues() {
     return get_instance().remote_sv_queues_;
   }
-  static caffe::SufficientVectorQueue* local_sv_queue(const int layer_id) {
+  static caffe::SufficientVectorQueue *local_sv_queue(const int layer_id) {
     CHECK_LT(layer_id, get_instance().local_sv_queues_.size());
     return get_instance().local_sv_queues_[layer_id];
   }
-  static caffe::SufficientVectorQueue* remote_sv_queue(const int layer_id) {
+  static caffe::SufficientVectorQueue *remote_sv_queue(const int layer_id) {
     CHECK_LT(layer_id, get_instance().remote_sv_queues_.size());
     return get_instance().remote_sv_queues_[layer_id];
   }
   void InitSVB(const int num_layers);
-  
+
   //
-  static std::vector<boost::shared_ptr<leveldb::DB> >& test_dbs() { 
-    return get_instance().test_dbs_; 
+  static std::vector<boost::shared_ptr<leveldb::DB>> &test_dbs() {
+    return get_instance().test_dbs_;
   }
-  static boost::shared_ptr<leveldb::DB>& global_db(int id) { 
+  static boost::shared_ptr<leveldb::DB> &global_db(int id) {
     if (id == -1) {
-      return get_instance().db_; 
+      return get_instance().db_;
     } else if (id >= 0) {
       CHECK_GT(get_instance().test_dbs_.size(), id);
       return get_instance().test_dbs_[id];
     } else {
-      LOG(FATAL) << "Invalid net id " << id 
-          << "; Valid net id is >= -1 and <= " 
-          << get_instance().test_dbs_.size() - 1;
+      LOG(FATAL) << "Invalid net id " << id << "; Valid net id is >= -1 and <= "
+                 << get_instance().test_dbs_.size() - 1;
     }
   }
 
@@ -88,8 +87,8 @@ private:
   int num_app_threads_;
   int num_rows_per_table_;
 
-  std::vector<caffe::SufficientVectorQueue*> local_sv_queues_;
-  std::vector<caffe::SufficientVectorQueue*> remote_sv_queues_;
+  std::vector<caffe::SufficientVectorQueue *> local_sv_queues_;
+  std::vector<caffe::SufficientVectorQueue *> remote_sv_queues_;
   int num_ip_layers_;
   bool use_svb_;
   bool svb_completed_;
@@ -97,7 +96,7 @@ private:
   // LEVELDB
   // different nets cannot use the same leveldb
   boost::shared_ptr<leveldb::DB> db_;
-  std::vector<boost::shared_ptr<leveldb::DB> > test_dbs_;
+  std::vector<boost::shared_ptr<leveldb::DB>> test_dbs_;
 };
 
-}   // namespace util
+} // namespace util

@@ -8,7 +8,7 @@ namespace petuum {
 // boost::high_resolution_timer. Code based on
 // http://boost.2283326.n4.nabble.com/boost-shared-mutex-performance-td2659061.html
 class HighResolutionTimer {
-  public:
+public:
   HighResolutionTimer();
 
   void restart();
@@ -22,7 +22,7 @@ class HighResolutionTimer {
   // return minimum value for elapsed()
   double elapsed_min() const;
 
- private:
+private:
   double total_time_;
   struct timespec start_time_;
 };

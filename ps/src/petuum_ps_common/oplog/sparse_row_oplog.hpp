@@ -14,29 +14,27 @@
 namespace petuum {
 class SparseRowOpLog : public virtual AbstractRowOpLog {
 public:
-  SparseRowOpLog(InitUpdateFunc InitUpdate,
-                 CheckZeroUpdateFunc CheckZeroUpdate,
-                 size_t update_size):
-      AbstractRowOpLog(update_size),
-      InitUpdate_(InitUpdate),
-      CheckZeroUpdate_(CheckZeroUpdate) { }
+  SparseRowOpLog(InitUpdateFunc InitUpdate, CheckZeroUpdateFunc CheckZeroUpdate,
+                 size_t update_size)
+      : AbstractRowOpLog(update_size), InitUpdate_(InitUpdate),
+        CheckZeroUpdate_(CheckZeroUpdate) {}
 
   virtual ~SparseRowOpLog() {
     auto iter = oplogs_.begin();
     for (; iter != oplogs_.end(); iter++) {
-      delete[] iter->second;
+      delete[] iter -> second;
     }
   }
 
   void Reset() {
     auto iter = oplogs_.begin();
     for (; iter != oplogs_.end(); iter++) {
-      delete[] iter->second;
+      delete[] iter -> second;
     }
     oplogs_.clear();
   }
 
-  void* Find(int32_t col_id) {
+  void *Find(int32_t col_id) {
     auto iter = oplogs_.find(col_id);
     if (iter == oplogs_.end()) {
       return 0;
@@ -44,7 +42,7 @@ public:
     return iter->second;
   }
 
-  const void* FindConst(int32_t col_id) const {
+  const void *FindConst(int32_t col_id) const {
     auto iter = oplogs_.find(col_id);
     if (iter == oplogs_.end()) {
       return 0;
@@ -52,10 +50,10 @@ public:
     return iter->second;
   }
 
-  void* FindCreate(int32_t col_id) {
+  void *FindCreate(int32_t col_id) {
     auto iter = oplogs_.find(col_id);
     if (iter == oplogs_.end()) {
-      uint8_t* update = new uint8_t[update_size_];
+      uint8_t *update = new uint8_t[update_size_];
       InitUpdate_(col_id, update);
       oplogs_[col_id] = update;
       return update;
@@ -64,7 +62,7 @@ public:
   }
 
   // Guaranteed ordered traversal
-  void* BeginIterate(int32_t *column_id) {
+  void *BeginIterate(int32_t *column_id) {
     iter_ = oplogs_.begin();
     if (iter_ == oplogs_.end()) {
       return 0;
@@ -73,7 +71,7 @@ public:
     return iter_->second;
   }
 
-  void* Next(int32_t *column_id) {
+  void *Next(int32_t *column_id) {
     iter_++;
     if (iter_ == oplogs_.end()) {
       return 0;
@@ -83,7 +81,7 @@ public:
   }
 
   // Guaranteed ordered traversal, in ascending order of column_id
-  const void* BeginIterateConst(int32_t *column_id) const {
+  const void *BeginIterateConst(int32_t *column_id) const {
     const_iter_ = oplogs_.cbegin();
     if (const_iter_ == oplogs_.cend()) {
       return 0;
@@ -92,7 +90,7 @@ public:
     return const_iter_->second;
   }
 
-  const void* NextConst(int32_t *column_id) const {
+  const void *NextConst(int32_t *column_id) const {
     const_iter_++;
     if (const_iter_ == oplogs_.cend()) {
       return 0;
@@ -101,15 +99,13 @@ public:
     return const_iter_->second;
   }
 
-  size_t GetSize() const {
-    return oplogs_.size();
-  }
+  size_t GetSize() const { return oplogs_.size(); }
 
   size_t ClearZerosAndGetNoneZeroSize() {
     auto oplog_iter = oplogs_.begin();
     while (oplog_iter != oplogs_.end()) {
       if (CheckZeroUpdate_(oplog_iter->second)) {
-        delete[] oplog_iter->second;
+        delete[] oplog_iter -> second;
         auto orig_oplog_iter = oplog_iter;
         ++oplog_iter;
         oplogs_.erase(orig_oplog_iter);
@@ -122,8 +118,8 @@ public:
 
   size_t GetSparseSerializedSize() {
     size_t num_updates = oplogs_.size();
-    return sizeof(int32_t) + sizeof(int32_t)*num_updates
-        + update_size_*num_updates;
+    return sizeof(int32_t) + sizeof(int32_t) * num_updates +
+           update_size_ * num_updates;
   }
 
   size_t GetDenseSerializedSize() {
@@ -137,15 +133,15 @@ public:
   // 3) total size for update array
   size_t SerializeSparse(void *mem) {
     size_t num_oplogs = oplogs_.size();
-    int32_t *mem_num_updates = reinterpret_cast<int32_t*>(mem);
+    int32_t *mem_num_updates = reinterpret_cast<int32_t *>(mem);
     *mem_num_updates = num_oplogs;
 
-    uint8_t *mem_index = reinterpret_cast<uint8_t*>(mem) + sizeof(int32_t);
-    uint8_t *mem_oplogs = mem_index + num_oplogs*sizeof(int32_t);
+    uint8_t *mem_index = reinterpret_cast<uint8_t *>(mem) + sizeof(int32_t);
+    uint8_t *mem_oplogs = mem_index + num_oplogs * sizeof(int32_t);
 
     for (auto oplog_iter = oplogs_.cbegin(); oplog_iter != oplogs_.cend();
          ++oplog_iter) {
-      *(reinterpret_cast<int32_t*>(mem_index)) = oplog_iter->first;
+      *(reinterpret_cast<int32_t *>(mem_index)) = oplog_iter->first;
       memcpy(mem_oplogs, oplog_iter->second, update_size_);
       mem_index += sizeof(int32_t);
       mem_oplogs += update_size_;
@@ -158,16 +154,15 @@ public:
     return GetSparseSerializedSize();
   }
 
-  const void *ParseDenseSerializedOpLog(
-      const void *mem, int32_t *num_updates,
-      size_t *serialized_size) const {
+  const void *ParseDenseSerializedOpLog(const void *mem, int32_t *num_updates,
+                                        size_t *serialized_size) const {
     LOG(FATAL) << "Sparse OpLog does not support dense serialize";
     return mem;
   }
 
   void OverwriteWithDenseUpdate(const void *updates, int32_t index_st,
                                 int32_t num_updates) {
-    const uint8_t *updates_uint8 = reinterpret_cast<const uint8_t*>(updates);
+    const uint8_t *updates_uint8 = reinterpret_cast<const uint8_t *>(updates);
     for (int i = 0; i < num_updates; ++i) {
       int32_t col_id = i + index_st;
       uint8_t *update;
@@ -178,16 +173,16 @@ public:
       } else {
         update = oplog_iter->second;
       }
-      memcpy(update, updates_uint8
-             + i*AbstractRowOpLog::update_size_,
+      memcpy(update, updates_uint8 + i * AbstractRowOpLog::update_size_,
              AbstractRowOpLog::update_size_);
     }
   }
+
 protected:
-  std::map<int32_t, uint8_t*> oplogs_;
+  std::map<int32_t, uint8_t *> oplogs_;
   const InitUpdateFunc InitUpdate_;
   const CheckZeroUpdateFunc CheckZeroUpdate_;
-  std::map<int32_t, uint8_t*>::iterator iter_;
-  mutable std::map<int32_t, uint8_t*>::const_iterator const_iter_;
+  std::map<int32_t, uint8_t *>::iterator iter_;
+  mutable std::map<int32_t, uint8_t *>::const_iterator const_iter_;
 };
 }

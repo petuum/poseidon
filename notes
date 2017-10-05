@@ -1,0 +1,10 @@
+* thirdpart does not build at times; for the first time only glog gets built. A second invocation of make builds all the third party libs
+
+Remote Dev
+
+https://github.com/facebook/nuclide/issues/130
+
+http://clang.llvm.org/docs/ClangFormat.html
+
+GCC 6 installation
+https://gist.github.com/application2000/73fd6f4bf1be6600a2cf9f56315a2d91

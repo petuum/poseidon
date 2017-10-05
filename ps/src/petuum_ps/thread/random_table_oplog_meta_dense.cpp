@@ -1,15 +1,12 @@
 #include <petuum_ps/thread/random_table_oplog_meta_dense.hpp>
 
 namespace petuum {
-RandomTableOpLogMetaDense::RandomTableOpLogMetaDense(const AbstractRow *sample_row,
-                                                     size_t table_size):
-    sample_row_(sample_row),
-    meta_vec_(table_size, RowOpLogMeta()),
-    num_valid_oplogs_(0),
-    uniform_dist_(0, 1),
-    num_new_oplog_metas_(0) { }
+RandomTableOpLogMetaDense::RandomTableOpLogMetaDense(
+    const AbstractRow *sample_row, size_t table_size)
+    : sample_row_(sample_row), meta_vec_(table_size, RowOpLogMeta()),
+      num_valid_oplogs_(0), uniform_dist_(0, 1), num_new_oplog_metas_(0) {}
 
-RandomTableOpLogMetaDense::~RandomTableOpLogMetaDense() { }
+RandomTableOpLogMetaDense::~RandomTableOpLogMetaDense() {}
 
 void RandomTableOpLogMetaDense::InsertMergeRowOpLogMeta(
     int32_t row_id, const RowOpLogMeta &row_oplog_meta) {
@@ -45,13 +42,12 @@ int32_t RandomTableOpLogMetaDense::GetAndClearNextInOrder() {
     return -1;
 
   while (meta_iter_ != meta_vec_.end()) {
-    while (meta_iter_->get_clock() == -1
-           && meta_iter_ != meta_vec_.end()) {
+    while (meta_iter_->get_clock() == -1 && meta_iter_ != meta_vec_.end()) {
       meta_iter_++;
     }
 
     if (meta_iter_ == meta_vec_.end())
-        return -1;
+      return -1;
 
     double my_prob = uniform_dist_(generator_);
 
@@ -78,13 +74,13 @@ int32_t RandomTableOpLogMetaDense::GetAndClearNextUptoClock() {
 
   for (; meta_iter_ != meta_vec_.end(); ++meta_iter_) {
     int32_t clock_to_check = meta_iter_->get_clock();
-    if (clock_to_check >= 0
-        && clock_to_check <= clock_to_clear_) {
+    if (clock_to_check >= 0 && clock_to_check <= clock_to_clear_) {
       break;
     }
   }
 
-  if (meta_iter_ == meta_vec_.end()) return -1;
+  if (meta_iter_ == meta_vec_.end())
+    return -1;
 
   int32_t row_id = meta_iter_ - meta_vec_.begin();
   meta_iter_->invalidate_clock();
@@ -96,5 +92,4 @@ int32_t RandomTableOpLogMetaDense::GetAndClearNextUptoClock() {
 size_t RandomTableOpLogMetaDense::GetNumRowOpLogs() const {
   return num_valid_oplogs_;
 }
-
 }

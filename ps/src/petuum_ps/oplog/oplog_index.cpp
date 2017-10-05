@@ -5,13 +5,12 @@
 
 namespace petuum {
 
-PartitionOpLogIndex::PartitionOpLogIndex(size_t capacity, int32_t partition_num):
-    partition_num_(partition_num),
-    capacity_(capacity),
-    locks_(GlobalContext::GetLockPoolSize()),
-    shared_oplog_index_(new cuckoohash_map<int32_t, bool>
-                        ((capacity / GlobalContext::get_num_comm_channels_per_client())
-                         * kCuckooExpansionFactor)){
+PartitionOpLogIndex::PartitionOpLogIndex(size_t capacity, int32_t partition_num)
+    : partition_num_(partition_num), capacity_(capacity),
+      locks_(GlobalContext::GetLockPoolSize()),
+      shared_oplog_index_(new cuckoohash_map<int32_t, bool>(
+          (capacity / GlobalContext::get_num_comm_channels_per_client()) *
+          kCuckooExpansionFactor)) {
   Init(partition_num);
 }
 
@@ -27,15 +26,14 @@ void PartitionOpLogIndex::Init(int32_t partition_num) {
   }
 }
 
-
-PartitionOpLogIndex::PartitionOpLogIndex(PartitionOpLogIndex && other):
-  capacity_(other.capacity_),
-  shared_oplog_index_(other.shared_oplog_index_) {
+PartitionOpLogIndex::PartitionOpLogIndex(PartitionOpLogIndex &&other)
+    : capacity_(other.capacity_),
+      shared_oplog_index_(other.shared_oplog_index_) {
   other.shared_oplog_index_ = 0;
 }
 
-void PartitionOpLogIndex::AddIndex(const std::unordered_set<int32_t>
-                                   &oplog_index) {
+void
+PartitionOpLogIndex::AddIndex(const std::unordered_set<int32_t> &oplog_index) {
   smtx_.lock_shared();
   for (auto iter = oplog_index.cbegin(); iter != oplog_index.cend(); iter++) {
     locks_.Lock(*iter);
@@ -48,8 +46,8 @@ void PartitionOpLogIndex::AddIndex(const std::unordered_set<int32_t>
 cuckoohash_map<int32_t, bool> *PartitionOpLogIndex::Reset() {
   smtx_.lock();
   cuckoohash_map<int32_t, bool> *old_index = shared_oplog_index_;
-  shared_oplog_index_ = new cuckoohash_map<int32_t, bool>
-                        (capacity_*kCuckooExpansionFactor);
+  shared_oplog_index_ =
+      new cuckoohash_map<int32_t, bool>(capacity_ * kCuckooExpansionFactor);
   Init(partition_num_);
   smtx_.unlock();
   return old_index;
@@ -70,19 +68,17 @@ TableOpLogIndex::TableOpLogIndex(size_t capacity) {
 }
 
 void TableOpLogIndex::AddIndex(int32_t partition_num,
-                               const std::unordered_set<int32_t>
-                               &oplog_index) {
+                               const std::unordered_set<int32_t> &oplog_index) {
 
   partition_oplog_index_[partition_num].AddIndex(oplog_index);
 }
 
-cuckoohash_map<int32_t, bool> *TableOpLogIndex::ResetPartition(
-    int32_t partition_num) {
+cuckoohash_map<int32_t, bool> *
+TableOpLogIndex::ResetPartition(int32_t partition_num) {
   return partition_oplog_index_[partition_num].Reset();
 }
 
 size_t TableOpLogIndex::GetNumRowOpLogs(int32_t partition_num) {
   return partition_oplog_index_[partition_num].GetNumRowOpLogs();
 }
-
 }

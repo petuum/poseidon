@@ -15,22 +15,15 @@
 namespace petuum {
 class OpLogAccessor {
 public:
-  OpLogAccessor():
-    row_oplog_(0) { }
+  OpLogAccessor() : row_oplog_(0) {}
 
-  ~OpLogAccessor() { }
+  ~OpLogAccessor() {}
 
-  Unlocker<std::mutex> *get_unlock_ptr() {
-    return &unlocker_;
-  }
+  Unlocker<std::mutex> *get_unlock_ptr() { return &unlocker_; }
 
-  void set_row_oplog(AbstractRowOpLog *row_oplog) {
-    row_oplog_ = row_oplog;
-  }
+  void set_row_oplog(AbstractRowOpLog *row_oplog) { row_oplog_ = row_oplog; }
 
-  AbstractRowOpLog *get_row_oplog() {
-    return row_oplog_;
-  }
+  AbstractRowOpLog *get_row_oplog() { return row_oplog_; }
 
 private:
   Unlocker<std::mutex> unlocker_;
@@ -39,8 +32,8 @@ private:
 
 class AbstractOpLog : boost::noncopyable {
 public:
-  AbstractOpLog() { }
-  virtual ~AbstractOpLog() { }
+  AbstractOpLog() {}
+  virtual ~AbstractOpLog() {}
 
   virtual void RegisterThread() = 0;
   virtual void DeregisterThread() = 0;
@@ -52,12 +45,13 @@ public:
                            const void *deltas, int32_t num_updates) = 0;
 
   virtual int32_t DenseBatchInc(int32_t row_id, const void *updates,
-                           int32_t index_st, int32_t num_updates) = 0;
+                                int32_t index_st, int32_t num_updates) = 0;
 
   // Guaranteed exclusive accesses to the same row id.
   virtual bool FindOpLog(int32_t row_id, OpLogAccessor *oplog_accessor) = 0;
   // return true if a new row oplog is created
-  virtual bool FindInsertOpLog(int32_t row_id, OpLogAccessor *oplog_accessor) = 0;
+  virtual bool FindInsertOpLog(int32_t row_id,
+                               OpLogAccessor *oplog_accessor) = 0;
   // oplog_accessor aquires the lock on the row whether or not the
   // row oplog exists.
   virtual bool FindAndLock(int32_t row_id, OpLogAccessor *oplog_accessor) = 0;
@@ -66,19 +60,21 @@ public:
   // not use any lock.
   virtual AbstractRowOpLog *FindOpLog(int32_t row_id) = 0;
   virtual AbstractRowOpLog *FindInsertOpLog(int32_t row_id) = 0;
-  virtual void PutBackBuffer(int32_t comm_channel_idx, AbstractAppendOnlyBuffer* buff) = 0;
+  virtual void PutBackBuffer(int32_t comm_channel_idx,
+                             AbstractAppendOnlyBuffer *buff) = 0;
   // Mutual exclusive accesses
   typedef bool (*GetOpLogTestFunc)(AbstractRowOpLog *, void *arg);
-  virtual bool GetEraseOpLog(
-      int32_t row_id, AbstractRowOpLog **row_oplog_ptr) = 0;
-  virtual bool GetEraseOpLogIf(
-      int32_t row_id, GetOpLogTestFunc test,
-      void *test_args, AbstractRowOpLog **row_oplog_ptr) = 0;
+  virtual bool GetEraseOpLog(int32_t row_id,
+                             AbstractRowOpLog **row_oplog_ptr) = 0;
+  virtual bool GetEraseOpLogIf(int32_t row_id, GetOpLogTestFunc test,
+                               void *test_args,
+                               AbstractRowOpLog **row_oplog_ptr) = 0;
 
-  virtual bool GetInvalidateOpLogMeta(
-      int32_t row_id, RowOpLogMeta *row_oplog_meta) = 0;
+  virtual bool GetInvalidateOpLogMeta(int32_t row_id,
+                                      RowOpLogMeta *row_oplog_meta) = 0;
 
-  virtual AbstractAppendOnlyBuffer *GetAppendOnlyBuffer(int32_t comm_channel_idx) = 0;
+  virtual AbstractAppendOnlyBuffer *
+  GetAppendOnlyBuffer(int32_t comm_channel_idx) = 0;
 };
 
-}   // namespace petuum
+} // namespace petuum
