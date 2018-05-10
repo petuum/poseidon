@@ -62,9 +62,9 @@ void SSPAggrBgWorker::ReadTableOpLogsIntoOpLogMeta(int32_t table_id,
   //        << " new index size = " << new_table_oplog_index_ptr->size();
 
   size_t num_oplog_metas_read = 0;
-
-  for (auto oplog_index_iter = new_table_oplog_index_ptr->cbegin();
-       !oplog_index_iter.is_end(); oplog_index_iter++) {
+  auto LT = new_table_oplog_index_ptr->lock_table();
+  for (auto oplog_index_iter = LT.cbegin();
+       oplog_index_iter != LT.cend(); oplog_index_iter++) {
     int32_t row_id = oplog_index_iter->first;
     RowOpLogMeta row_oplog_meta;
     bool found = table_oplog.GetInvalidateOpLogMeta(row_id, &row_oplog_meta);

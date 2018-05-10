@@ -14,7 +14,8 @@ BoundedSparseProcessStorage::BoundedSparseProcessStorage(size_t capacity, size_t
 
 BoundedSparseProcessStorage::~BoundedSparseProcessStorage() {
   // Iterate through storage_map_ and delete client rows.
-  for (auto it = storage_map_.begin(); !it.is_end(); ++it) {
+  auto LT = storage_map_.lock_table();
+  for (auto it = LT.begin(); it != LT.end(); ++it) {
     ClientRow* client_row_ptr = (it->second).first;
     delete client_row_ptr;
   }

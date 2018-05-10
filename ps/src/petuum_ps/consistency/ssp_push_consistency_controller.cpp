@@ -71,20 +71,18 @@ ClientRow *SSPPushConsistencyController::Get(
     int32_t row_id,
     RowAccessor* row_accessor, int32_t clock) {
   STATS_APP_SAMPLE_SSP_GET_BEGIN(table_id_);
-
   // Look for row_id in process_storage_.
   int32_t stalest_clock = clock > 0 ? clock : 0;
 
   int32_t system_clock = BgWorkers::GetSystemClock();
   if (system_clock < stalest_clock) {
-    //LOG(INFO) << "system_clock = " << system_clock
+  //  LOG(INFO) << "system_clock = " << system_clock
     //        << " stalest_clock = " << stalest_clock;
     STATS_APP_ACCUM_SSPPUSH_GET_COMM_BLOCK_BEGIN(table_id_);
     BgWorkers::WaitSystemClock(stalest_clock);
     STATS_APP_ACCUM_SSPPUSH_GET_COMM_BLOCK_END(table_id_);
     system_clock = BgWorkers::GetSystemClock();
   }
-
   ClientRow *client_row = process_storage_.Find(row_id, row_accessor);
 
   if (client_row != 0) {

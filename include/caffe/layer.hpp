@@ -327,6 +327,7 @@ class Layer {
 #ifndef CPU_ONLY
   int device_id_;
 #endif
+  cudnnActivationDescriptor_t activ_desc_;
   /** The protobuf that stores the layer parameters */
   LayerParameter layer_param_;
   /** The vector that stores the learnable parameters as a set of blobs. */

@@ -251,7 +251,6 @@ void Solver<Dtype>::Solve(const char* resume_file) {
   PreSolve();
 
   util::Context& context = util::Context::get_instance();
-
   // Register net output tables  
   if (thread_id_ == 0) {
     if (param_.display()) {
@@ -259,6 +258,7 @@ void Solver<Dtype>::Solve(const char* resume_file) {
           = (param_.max_iter() - 0) / param_.display() + 5;
       net_->RegisterNetOutputPSTable(num_rows_train_net_outputs);
     }
+  LOG(INFO) << "finish register net output PStable";
     if (param_.test_interval()) {
       for (int test_net_id = 0; test_net_id < test_nets_.size(); ++test_net_id) {
         const int num_rows_test_net_outputs
@@ -267,6 +267,7 @@ void Solver<Dtype>::Solve(const char* resume_file) {
             num_rows_test_net_outputs);
       }
     }
+   LOG(INFO) << "finish hehe";
   }
   // Init SVB
   if (context.use_svb()) {
@@ -299,18 +300,15 @@ void Solver<Dtype>::Solve(const char* resume_file) {
     count_temp += output_temp[j]->count();
   }
   vector<Dtype> output_cache(count_temp + caffe::kNumFixedCols);
-
   // Synchronize
   petuum::PSTableGroup::GlobalBarrier();
   clock_counter_ += param_table_staleness_ + 1;
   net_->SyncWithPS(clock_counter_ - param_table_staleness_);
-
   // For a network that is trained by the solver, no bottom or top vecs
   // should be given, and we will just provide dummy vecs.
   vector<Blob<Dtype>*> bottom_vec;
   for (; iter_ < param_.max_iter(); ++iter_) {
     JoinSyncThreads();
-
     // Save a snapshot if needed.
     if (param_.snapshot() && iter_ > start_iter &&
         iter_ % param_.snapshot() == 0) {
@@ -326,7 +324,6 @@ void Solver<Dtype>::Solve(const char* resume_file) {
     net_->set_debug_info(display && param_.debug_info());
 
     Dtype loss = ForwardBackward(bottom_vec);
-
     if (display) {
       if (client_id_ == 0 && thread_id_ == 0) {
         float time_elapsed = total_timer_.elapsed();
@@ -809,6 +806,8 @@ void SGDSolver<Dtype>::PreSolve() {
         net_param->num(), net_param->channels(), net_param->height(),
         net_param->width())));
   }
+
+  LOG(INFO) << "finish presolving";
 }
 
 template <typename Dtype>

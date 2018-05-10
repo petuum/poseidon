@@ -202,7 +202,7 @@ void DataLayer<Dtype>::InitializeDB() {
     CHECK_EQ(mdb_env_create(&mdb_env_), MDB_SUCCESS) << "mdb_env_create failed";
     CHECK_EQ(mdb_env_set_mapsize(mdb_env_, 1099511627776), MDB_SUCCESS);  // 1TB
     CHECK_EQ(mdb_env_open(mdb_env_, source.str().c_str(),
-             MDB_RDONLY|MDB_NOTLS, 0664), MDB_SUCCESS) << "mdb_env_open failed";
+             MDB_RDONLY|MDB_NOTLS, 0664), MDB_SUCCESS) << source.str().c_str();
     CHECK_EQ(mdb_txn_begin(mdb_env_, NULL, MDB_RDONLY, &mdb_txn_), MDB_SUCCESS)
         << "mdb_txn_begin failed";
     CHECK_EQ(mdb_open(mdb_txn_, NULL, 0, &mdb_dbi_), MDB_SUCCESS)

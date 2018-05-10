@@ -48,8 +48,9 @@ SparseOpLog::SparseOpLog(int capacity, const AbstractRow *sample_row,
 }
 
 SparseOpLog::~SparseOpLog() {
-  auto iter = oplog_map_.begin();
-  for(; !iter.is_end(); iter++){
+auto lt = oplog_map_.lock_table();
+  auto iter = lt.begin();
+  for(; iter!=lt.end(); iter++){
     delete iter->second;
   }
 }

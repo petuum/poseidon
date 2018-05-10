@@ -326,7 +326,7 @@ CXXFLAGS += $(PETUUM_CXXFLAGS)
 NVCCFLAGS += -ccbin=$(CXX) -Xcompiler -fPIC $(COMMON_FLAGS) -std=c++11
 # mex may invoke an older gcc that is too liberal with -Wuninitalized
 MATLAB_CXXFLAGS := $(CXXFLAGS) -Wno-uninitialized
-LINKFLAGS += -static-libstdc++ -fPIC $(COMMON_FLAGS) $(WARNINGS)
+LINKFLAGS += -fPIC $(COMMON_FLAGS) $(WARNINGS)
 
 # Petuum
 LDFLAGS += $(PETUUM_LDFLAGS_DIRS)

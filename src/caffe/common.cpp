@@ -185,16 +185,21 @@ int Caffe::GetDeviceId(const int thread_id){
 void Caffe::InitDevices(const std::vector<int> &device_ids, const int num_app_threads){
   //only initialize the top num_app_threads of devices
   for (int i = 0; i < num_app_threads; ++i){
+
+   LOG(INFO)<<"init devices " << device_ids[i]<<"total num " <<num_app_threads ;
    InitDevice(device_ids[i]);
+   LOG(INFO) << "success devices" << device_ids[i];
   }
 
   //bind device id with thread id
   for (int i = 0; i < num_app_threads; ++i){
+    LOG(INFO) << "bind device "<< device_ids[i];
     Get().threads_devices_[i] = device_ids[i];
   }
 }
 
 void Caffe::InitDevice(const int device_id){
+  LOG(INFO) << "init device get " << device_id;
   for (int i = 0; i < Get().device_ids_.size(); ++i){
     CHECK(Get().device_ids_[i] != device_id) << "Duplicated device id: " <<device_id;
   }

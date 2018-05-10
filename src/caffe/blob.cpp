@@ -250,7 +250,7 @@ void Blob<Dtype>::SyncWithPSTable(const int clock) {
 template <typename Dtype>
 Dtype* Blob<Dtype>::ReadPSTable(const int clock) const {
   CHECK(global_table_ptr_);
-  
+   
   void* data_temp;
   CaffeMallocHost(&data_temp, capacity_ * sizeof(Dtype));
   Dtype* data = (Dtype*)data_temp;

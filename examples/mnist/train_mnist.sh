@@ -9,8 +9,9 @@ progname=caffe_main
 prog_path=${app_dir}/build/tools/${progname}
 
 host_filename="${app_dir}/machinefiles/localserver"
+echo $host_filename
 host_file=$(readlink -f $host_filename)
-
+echo $host_file
 dataset=mnist
 
 ##=====================================
@@ -42,7 +43,10 @@ host_list=`cat $host_file | awk '{ print $2 }'`
 unique_host_list=`cat $host_file | awk '{ print $2 }' | uniq`
 num_unique_hosts=`cat $host_file | awk '{ print $2 }' | uniq | wc -l`
 devices="0"
-
+echo host_list
+echo $host_list
+echo unique_host_list
+echo $unique_host_list
 output_dir=$app_dir/output
 output_dir="${output_dir}/caffe.${dataset}.S${param_table_staleness}"
 output_dir="${output_dir}.M${num_unique_hosts}"
@@ -51,13 +55,12 @@ log_dir=$output_dir/logs
 net_outputs_prefix="${output_dir}/${dataset}"
 
 # Kill previous instances of this program
-echo "Killing previous instances of '$progname' on servers, please wait..."
-for ip in $unique_host_list; do
-  ssh $ssh_options $ip \
-    killall -q $progname
-done
-echo "All done!"
-
+#echo "Killing previous instances of '$progname' on servers, please wait..."
+#for ip in $unique_host_list; do
+#  ssh $ssh_options $ip \
+#    killall -q $progname
+#done
+#echo "All done!"
 # Spawn program instances
 client_id=0
 for ip in $unique_host_list; do
@@ -74,8 +77,7 @@ for ip in $unique_host_list; do
       GLOG_minloglevel=0 \
       GLOG_vmodule="" \
       $prog_path train \
-      --consistency_model $consistency_model \
-      --init_thread_access_table=true \
+      --consistency_model $consistency_model \ --init_thread_access_table=true \
       --hostfile $host_file \
       --client_id ${client_id} \
       --num_clients $num_unique_hosts \
@@ -90,8 +92,9 @@ for ip in $unique_host_list; do
       --gpu=${devices}'" #\
       #--snapshot=${snapshot_filename}'"
 
-  ssh $ssh_options $ip bash -c $cmd &
-  #eval $cmd  # Use this to run locally (on one machine).
+ # ssh $ssh_options $ip bash -c $cmd &
+  #echo $cmd
+  eval $cmd  # Use this to run locally (on one machine).
 
   # Wait a few seconds for the name node (client 0) to set up
   if [ $client_id -eq 0 ]; then

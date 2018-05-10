@@ -61,6 +61,14 @@ template<> class dataType<double> {
 };
 
 template <typename Dtype>
+inline cudnnDataType_t getDataType(cudnnDataType_t data_type)
+{
+	if(data_type == -1) return dataType<Dtype>::type;
+	else return data_type;
+}
+
+
+template <typename Dtype>
 inline void createTensor4dDesc(cudnnTensorDescriptor_t* desc) {
   CUDNN_CHECK(cudnnCreateTensorDescriptor(desc));
 }
@@ -86,9 +94,9 @@ inline void setTensor4dDesc(cudnnTensorDescriptor_t* desc,
 
 template <typename Dtype>
 inline void createFilterDesc(cudnnFilterDescriptor_t* desc,
-    int n, int c, int h, int w) {
+    int n, int c, int h, int w, cudnnDataType_t data_type = cudnnDataType_t(-1)) {
   CUDNN_CHECK(cudnnCreateFilterDescriptor(desc));
-  CUDNN_CHECK(cudnnSetFilter4dDescriptor(*desc, dataType<Dtype>::type,
+  CUDNN_CHECK(cudnnSetFilter4dDescriptor(*desc, getDataType<Dtype>(data_type),CUDNN_TENSOR_NCHW,
       n, c, h, w));
 }
 
@@ -100,9 +108,10 @@ inline void createConvolutionDesc(cudnnConvolutionDescriptor_t* conv) {
 template <typename Dtype>
 inline void setConvolutionDesc(cudnnConvolutionDescriptor_t* conv,
     cudnnTensorDescriptor_t bottom, cudnnFilterDescriptor_t filter,
-    int pad_h, int pad_w, int stride_h, int stride_w) {
+    int pad_h, int pad_w, int stride_h, int stride_w, cudnnDataType_t data_type = cudnnDataType_t(-1)) {
   CUDNN_CHECK(cudnnSetConvolution2dDescriptor(*conv, 
-      pad_h, pad_w, stride_h, stride_w, 1, 1, CUDNN_CROSS_CORRELATION));
+      pad_h, pad_w, stride_h, stride_w, 1, 1, CUDNN_CROSS_CORRELATION,
+	 getDataType<Dtype>(data_type)));
 }
 
 template <typename Dtype>
@@ -120,8 +129,16 @@ inline void createPoolingDesc(cudnnPoolingDescriptor_t* pool_desc,
     LOG(FATAL) << "Unknown pooling method.";
   }
   CUDNN_CHECK(cudnnCreatePoolingDescriptor(pool_desc));
-  CUDNN_CHECK(cudnnSetPooling2dDescriptor(*pool_desc, *mode, h, w,
+  CUDNN_CHECK(cudnnSetPooling2dDescriptor(*pool_desc, *mode,CUDNN_PROPAGATE_NAN, h, w,
         pad_h, pad_w, stride_h, stride_w));
+}
+
+template <typename Dtype>
+inline void createActivationDescriptor(cudnnActivationDescriptor_t* activ_desc,
+    cudnnActivationMode_t mode) {
+  CUDNN_CHECK(cudnnCreateActivationDescriptor(activ_desc));
+  CUDNN_CHECK(cudnnSetActivationDescriptor(*activ_desc, mode,
+                                           CUDNN_PROPAGATE_NAN, Dtype(0)));
 }
 
 }  // namespace cudnn

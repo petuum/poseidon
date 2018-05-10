@@ -18,8 +18,8 @@ cd ps
 make
 
 # setup the third party libs for Caffe
-cd ..
-sh script/setup_third_party.sh
+#cd ..
+#sh script/setup_third_party.sh
 
 # duplicate the Makefile.config
 cp Makefile.config.example Makefile.config

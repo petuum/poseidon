@@ -146,7 +146,6 @@ class CuDNNConvolutionLayer : public ConvolutionLayer<Dtype> {
       vector<Blob<Dtype>*>* top);
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
-
   bool handles_setup_;
   cudnnHandle_t* handle_;
   cudaStream_t*  stream_;
@@ -157,6 +156,14 @@ class CuDNNConvolutionLayer : public ConvolutionLayer<Dtype> {
   int bottom_offset_, top_offset_, weight_offset_, bias_offset_;
   size_t workspaceSizeInBytes;
   void *workspace;
+  cudnnConvolutionFwdAlgo_t *fwd_algo_;
+  cudnnConvolutionBwdFilterAlgo_t *bwd_filter_algo_;
+  cudnnConvolutionBwdDataAlgo_t *bwd_data_algo_;
+  size_t *workspace_fwd_sizes_;
+  size_t *workspace_bwd_data_sizes_;
+  size_t *workspace_bwd_filter_sizes_;
+  void *workspaceData;  // underlying storage
+  void **WORKSPACE;  // aliases into workspaceData
 };
 #endif
 

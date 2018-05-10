@@ -7,11 +7,11 @@ DATA=data/ilsvrc12
 TOOLS=build/tools
 
 
-TRAIN_DATA_ROOT=/path/to/imagenet/train/
-VAL_DATA_ROOT=/path/to/imagenet/val/
+TRAIN_DATA_ROOT=/data2/imagenet1k/train/
+VAL_DATA_ROOT=/data2/imagenet1k/val/
 
-TRAIN_OUTPUT_ROOT=/path/to/output/train/
-VAL_OUTPUT_ROOT=/path/to/output/val/
+TRAIN_OUTPUT_ROOT=train/
+VAL_OUTPUT_ROOT=val/
 
 # Set RESIZE=true to resize the images to 256x256. Leave as false if images have
 # already been resized using another tool.

@@ -1014,9 +1014,12 @@ void Net<Dtype>::Update() {
 
 template <typename Dtype>
 void Net<Dtype>::SyncWithPS(const int clock) {
+  LOG(INFO) << "start sync with ps";
   for (int i = 0; i < params_.size(); ++i) {
+    LOG(INFO) << "go into loop";
     if (param_owners_[i] >= 0) { continue; }
     params_[i]->SyncWithPSTable(clock);
+  LOG(INFO) << "finish one iter";
   }
 }
 

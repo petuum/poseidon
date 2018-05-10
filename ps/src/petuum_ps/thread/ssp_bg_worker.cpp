@@ -97,8 +97,7 @@ BgOpLogPartition *SSPBgWorker::PrepareOpLogsNormal(
   }
 
   // Get OpLog index
-  cuckoohash_map<int32_t, bool> *new_table_oplog_index_ptr
-      = table->GetAndResetOpLogIndex(my_comm_channel_idx_);
+  cuckoohash_map<int32_t, bool> *new_table_oplog_index_ptr  = table->GetAndResetOpLogIndex(my_comm_channel_idx_);
 
   size_t table_update_size
       = table->get_sample_row()->get_update_size();
@@ -109,9 +108,9 @@ BgOpLogPartition *SSPBgWorker::PrepareOpLogsNormal(
     // Reset size to 0
     table_num_bytes_by_server_[server_id] = 0;
   }
-
-  for (auto oplog_index_iter = new_table_oplog_index_ptr->cbegin();
-       !oplog_index_iter.is_end(); oplog_index_iter++) {
+  auto LT = new_table_oplog_index_ptr->lock_table();
+  for (auto oplog_index_iter = LT.cbegin();
+     oplog_index_iter !=LT.end(); oplog_index_iter++) {
     int32_t row_id = oplog_index_iter->first;
     AbstractRowOpLog *row_oplog = 0;
     bool found = GetRowOpLog(table_oplog, row_id, &row_oplog);
@@ -123,6 +122,7 @@ BgOpLogPartition *SSPBgWorker::PrepareOpLogsNormal(
                         bg_table_oplog, GetSerializedRowOpLogSize);
     STATS_BG_ACCUM_TABLE_OPLOG_SENT(table_id, row_id, 1);
   }
+
   delete new_table_oplog_index_ptr;
   return bg_table_oplog;
 }
@@ -185,9 +185,9 @@ void SSPBgWorker::PrepareOpLogsNormalNoReplay(
   // Get OpLog index
   cuckoohash_map<int32_t, bool> *new_table_oplog_index_ptr
       = table->GetAndResetOpLogIndex(my_comm_channel_idx_);
-
-  for (auto oplog_index_iter = new_table_oplog_index_ptr->cbegin();
-       !oplog_index_iter.is_end(); oplog_index_iter++) {
+  auto LT = new_table_oplog_index_ptr->lock_table();
+  for (auto oplog_index_iter = LT.cbegin();
+      oplog_index_iter !=  LT.end(); oplog_index_iter++) {
     int32_t row_id = oplog_index_iter->first;
 
     OpLogAccessor oplog_accessor;

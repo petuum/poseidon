@@ -72,15 +72,17 @@ TableGroup::TableGroup(const TableGroupConfig &table_group_config,
 
   CommBus *comm_bus = new CommBus(local_id_min, local_id_max,
                                   num_total_clients, num_zmq_threads);
+  LOG(INFO) << "new commbus";
   GlobalContext::comm_bus = comm_bus;
 
   *init_thread_id = local_id_min
                     + GlobalContext::kInitThreadIDOffset;
   CommBus::Config comm_config(*init_thread_id, CommBus::kNone, "");
-
+  LOG(INFO) << "comm config";
   GlobalContext::comm_bus->ThreadRegister(comm_config);
+  LOG(INFO) << "register thread";
   ThreadContext::RegisterThread(*init_thread_id);
-
+  LOG(INFO) << "rare";
   if (GlobalContext::am_i_name_node_client()) {
     NameNode::Init();
     ServerThreads::Init(local_id_min + 1);
@@ -89,6 +91,7 @@ TableGroup::TableGroup(const TableGroupConfig &table_group_config,
   }
 
   BgWorkers::Start(&tables_);
+  LOG(INFO) << "i can start";
   BgWorkers::AppThreadRegister();
 
   if (table_access) {
